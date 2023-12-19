@@ -17,19 +17,27 @@
 
 package de.gematik.gsia
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
+import androidx.compose.material.Divider
 import androidx.compose.material.Text
+import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,9 +50,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import io.ktor.http.Url
 import kotlinx.coroutines.launch
@@ -76,12 +86,17 @@ fun FilledButton(label: String, onClick: () -> Unit = ({ })) {
  */
 @Composable
 fun Body(appRedirectUri: Url, errorMsg: String? = null) {
+
     Column(
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Text(
-            text = "Authorization Request incomming\nFrom: ${appRedirectUri.host}",
+            modifier = Modifier
+                .padding(5.dp)
+                .border(BorderStroke(1.dp, Color.Black))
+                .padding(5.dp),
+            text = "Authorization Request incomming.\nFrom: ${appRedirectUri.host}",
             fontFamily = FontFamily.SansSerif,
             fontSize = 20.sp,
         )
@@ -92,63 +107,117 @@ fun Body(appRedirectUri: Url, errorMsg: String? = null) {
             )
         }
     }
+
 }
 
 /**
- * This function extends to a Row containing two Buttons "Accept" and "Decline" with which the user decides whether to accept the authentication or not.
+ * This function provides a list of test identities. A kvnr can be chosen from the list but can also
+ * be entered manually via the textbox. The given kvnr is used for the following authentication
+ * process.
+ *
  * @param intent Intent which the app receives at starting
  * @param context For starting another app we need context of the android app
- * @return Row(...)
+ * @return Column(...)
  */
 @Composable
 fun AuthenticationButtons(intent: Url, context: Any) {
     val scope = rememberCoroutineScope()
-    var authCode by remember { mutableStateOf("Loading") }
-    var state by remember { mutableStateOf("Loading") }
-    val (redirectUrl, requestUri, appRedirectUri) = decomposeIntent(intent)
+    val (redirectUrl, requestUri, _) = decomposeIntent(intent)
+    var kvnr by remember { mutableStateOf(TextFieldValue("X110400607")) }
 
-    return Row(
-        verticalAlignment = Alignment.Bottom,
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        modifier = Modifier.padding(bottom = 20.dp)
+    return Column(
+        verticalArrangement = Arrangement.Bottom,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .padding(bottom = 20.dp)
+            .fillMaxHeight()
     ) {
-        FilledButton("Accept", onClick = {
-            scope.launch {
-                try {
-                    val response = HttpController().authorizationRequest(redirectUrl, requestUri)
-                    authCode = response.first
-                    state = response.second
-
-                    println("App-App-Flow Nr 7 RX: authCode=$authCode, state=$state")
-
-                    val deeplink: String = buildString {
-                        append("https://$appRedirectUri?")
-                        append("&code=$authCode")
-                        append("&state=$state")
-                    }
-
-                    println("App-App-Flow Nr 8 TX: $deeplink")
-                    executeDeeplink(context, deeplink)
-
-                } catch (e: Exception) {
-                    executeDeeplink(context, "$intent&error_msg=$e")
+        Text(
+            fontSize = 20.sp,
+            text = "Select a test identity"
+        )
+        Spacer(
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+        Column(
+            modifier = Modifier
+                // .size(width = 100.dp, height = 400.dp)
+                .fillMaxHeight(0.75f)
+                .verticalScroll(rememberScrollState())
+        ) {
+            insuredPersons.forEach { insured ->
+                Column(
+                    modifier = Modifier
+                        .clickable { kvnr = TextFieldValue(insured.kvnr) }
+                        .padding(12.dp)
+                        .fillMaxWidth()
+                ) {
+                    Text(
+                        fontSize = 6.em,
+                        text = insured.name
+                    )
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                        modifier = Modifier.padding(horizontal = 10.dp),
+                        fontSize = 4.em,
+                        color = Color.Gray,
+                        text = insured.kvnr
+                    )
                 }
+                Divider(modifier = Modifier.padding(vertical = 5.dp))
             }
-        })
-        FilledButton("Decline", onClick = {
-            // Behaviour for declining authentication
-        })
+        }
+
+        TextField(
+            value = kvnr,
+            onValueChange = {
+                kvnr = it
+            },
+            label = { Text(text = "KVNR") },
+            placeholder = { Text(text = "X123456784") },
+            modifier = Modifier
+                .padding(20.dp)
+                .fillMaxWidth()
+        )
+
+        Row(
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.Bottom,
+            modifier = Modifier
+                .padding(bottom = 20.dp)
+                .fillMaxWidth()
+        ) {
+            FilledButton("Accept", onClick = {
+                scope.launch {
+                    try {
+                        val response = HttpController().authorizationRequest(
+                            redirectUrl,
+                            requestUri,
+                            kvnr.text
+                        )
+
+                        println("App-App-Flow Nr 8 TX: $response")
+                        executeDeeplink(context, response)
+
+                    } catch (e: Exception) {
+                        executeDeeplink(context, "$intent&error_msg=$e")
+                    }
+                }
+            })
+            FilledButton("Decline", onClick = {
+                // Behaviour for declining authentication
+            })
+        }
     }
 }
 
 /**
- * This function creates Layout that should be displayed when the app is started with an invalid or without an Intent.
- * The Layout offers a Button with which an Intent can be simulated. By clicking the Button the GSIA is called via Deeplink
- * @param context Localcontext.current of Android app
+ * This function creates Layout that should be displayed when the app is started with an invalid or
+ * without an Intent.
  * @param intent Intent with which the GSIA was opened
  */
 @Composable
-fun InvalidIntentActivity(context: Any, intent: Url) {
+fun InvalidIntentActivity(intent: Url) {
 
     println("invalid intent: $intent")
 
@@ -192,41 +261,16 @@ fun DrawGematikLogo() {
     }
 }
 
-fun getAppRedirectUri(url: Url): String {
-    return decomposeIntent(url).third
-}
-
-fun checkIntentCorrectness(url: Url?): Boolean {
-
-    url ?: return false;
-
-    if (!(url.parameters.contains("request_uri") && url.parameters.contains("client_id"))) {
-        return false
-    }
-    return true
-}
-
-fun decomposeIntent(url: Url): Triple<String, String, String> {
-    return Triple(
-        first = url.toString().split("?")[0],
-        second = url.parameters["request_uri"]!!,
-        third = url.parameters["client_id"]!!)
-}
-
 @Composable
 fun App(context: Any, intent: String) {
 
-    println(intent)
-
-    return Surface(
+    return Column(
         modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colors.background
     ) {
-
         if (!checkIntentCorrectness(Url(intent))) {
             println("Intent invalid")
 
-            InvalidIntentActivity(context, Url(intent))
+            InvalidIntentActivity(Url(intent))
         } else {
             println("Intent valid")
             println("App-App-Flow Nr 5 RX: $intent")
