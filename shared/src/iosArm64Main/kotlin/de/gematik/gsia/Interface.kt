@@ -21,14 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
 import io.ktor.http.Url
 
-actual fun getAppName(): String {
-    TODO("Not yet implemented")
-}
-
 @Composable
 internal actual fun getGematikLogoPainter(): Painter {
     TODO("Not yet implemented")
-}
-
-actual fun executeDeeplink(context: Any?, uri: String) {
 }

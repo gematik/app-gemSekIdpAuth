@@ -16,12 +16,16 @@
  */
 
 import SwiftUI
+import shared
 
 @main
 struct iOSApp: App {
 	var body: some Scene {
 		WindowGroup {
-			ContentView()
+            ContentView()
+                .onOpenURL { url in
+                          print(url)
+                        }
 		}
 	}
 }
