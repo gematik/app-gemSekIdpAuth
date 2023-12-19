@@ -17,21 +17,22 @@
 
 package de.gematik.gsia
 
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.painter.Painter
-import dev.icerock.moko.resources.ImageResource
-import dev.icerock.moko.resources.compose.painterResource
 import io.ktor.http.Url
 
-actual fun getAppName(): String {
-    TODO("Not yet implemented")
+fun getAppRedirectUri(url: Url): String {
+    return decomposeIntent(url).third
 }
 
-@Composable
-internal actual fun getGematikLogoPainter(): Painter {
-    TODO("Not yet implemented")
-    // return painterResource(ImageResource("gematik.xml"))
+fun checkIntentCorrectness(url: Url?): Boolean {
+
+    url ?: return false;
+
+    return url.parameters.contains("request_uri") && url.parameters.contains("client_id")
 }
 
-actual fun executeDeeplink(context: Any?, uri: String) {
+fun decomposeIntent(url: Url): Triple<String, String, String> {
+    return Triple(
+        first = url.toString().split("?")[0],
+        second = url.parameters["request_uri"]!!,
+        third = url.parameters["client_id"]!!)
 }

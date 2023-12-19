@@ -21,6 +21,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.URLBuilder
 import io.ktor.http.Url
 
@@ -35,11 +36,12 @@ class HttpController {
     /**
      * sends Authorization Request to sektoraler IDP (GSI). (see App-App Flow 6)
      * @param redirectUrl Url to the sektoraler IDP
-     * @param requestUri Identifier for sektoraler IDP to map our authorization request to the first one initialized by the Anwendungsfrontend (Callee App)
+     * @param requestUri Identifier for sektoraler IDP to map our authorization request to the first
+     * one initialized by the Anwendungsfrontend (Callee App)
      * @param userId userId is optional because the userId is constant for GSI
-     * @return AUTH_CODE (can later be redeemed for an ACCESS_TOKEN)
+     * @return redirect to DiGA containing AUTH_CODE
      */
-    suspend fun authorizationRequest(redirectUrl: String, requestUri: String, userId: String = "12345678"): Pair<String, String> {
+    suspend fun authorizationRequest(redirectUrl: String, requestUri: String, userId: String = "12345678"): String {
 
         val url = Url("$redirectUrl?user_id=$userId&request_uri=$requestUri")
         println("App-App-Flow Nr 6 TX: $url")
@@ -47,19 +49,16 @@ class HttpController {
                 header("X-Authorization", X_AUTH_HEADER)
         }
 
+        println("Response Body: ${response.bodyAsText()}")
+        println("Response: $response")
+
         val redirect = URLBuilder(response.headers["Location"] ?: "").build()
+
+        println("App-App-Flow Nr 7 RX: $redirect")
 
         redirect.parameters["code"] ?: throw Exception("No AuthCode Recevied")
         redirect.parameters["state"] ?: throw Exception("No State Recevied")
 
-        return Pair(redirect.parameters["code"].toString(), redirect.parameters["state"].toString())
-    }
-
-    suspend fun sendRequest(request: Url): HttpResponse {
-        val response = client.get(request) {
-                header("X-Authorization", X_AUTH_HEADER)
-        }
-
-        return response
+        return redirect.toString()
     }
 }

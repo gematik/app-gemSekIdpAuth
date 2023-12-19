@@ -4,12 +4,14 @@ plugins {
 
     id("org.jetbrains.compose") version "1.5.3"
 
-    id("dev.icerock.mobile.multiplatform-resources")
+    // id("dev.icerock.mobile.multiplatform-resources")
 }
 
+/*
 multiplatformResources {
     multiplatformResourcesPackage = "de.gematik.common"
 }
+ */
 
 @OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
 kotlin {
@@ -25,15 +27,19 @@ kotlin {
 
 /* iOS app will be added in near future
     listOf(
-        iosX64(),
         iosArm64(),
-        iosSimulatorArm64(),
     ).forEach {
         it.binaries.framework {
             baseName = "shared"
+            isStatic = true
         }
     }
  */
+
+    iosArm64().binaries.framework {
+        baseName = "shared"
+        isStatic = true
+    }
 
     sourceSets {
         val ktorVersion = "2.3.4"
@@ -57,22 +63,30 @@ kotlin {
             }
         }
 
+        val iosMain by getting {
+            dependencies {
+                implementation("io.ktor:ktor-client-ios:$ktorVersion")
+            }
+        }
+
         val androidMain by getting {
             dependencies {
                 implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
-                implementation("androidx.activity:activity-compose:1.7.2")
+                implementation("androidx.activity:activity-compose:1.8.1")
             }
 
         }
     }
 }
 
+/*
 dependencies {
     commonMainApi("dev.icerock.moko:resources:0.22.0")
     commonMainApi("dev.icerock.moko:resources-compose:0.22.0") // for compose multiplatform
 
     commonTestImplementation("dev.icerock.moko:resources-test:0.22.0") // for testing
 }
+ */
 
 android {
     namespace = "de.gematik.gsia"

@@ -15,20 +15,16 @@
  *
  */
 
-package de.gematik.gsia
+import shared
+import SwiftUI
 
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.painter.Painter
-import io.ktor.http.Url
-
-actual fun getAppName(): String {
-    TODO("Not yet implemented")
-}
-
-@Composable
-internal actual fun getGematikLogoPainter(): Painter {
-    TODO("Not yet implemented")
-}
-
-actual fun executeDeeplink(context: Any?, uri: String) {
+struct ComposeView: UIViewControllerRepresentable {
+    var universalLink: URL?
+    
+    func updateUIViewController(_ uiViewController: UIViewControllerType, context: Context) {
+    }
+    
+    func makeUIViewController(context: Context) -> some UIViewController {
+        AppKt.MainViewController(url: universalLink?.absoluteString)
+    }
 }

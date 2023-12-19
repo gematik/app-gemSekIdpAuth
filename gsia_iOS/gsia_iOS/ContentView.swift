@@ -19,10 +19,19 @@ import SwiftUI
 import shared
 
 struct ContentView: View {
-	let greet = Greeting().greet()
+    @State var universalLink: URL?
 
 	var body: some View {
-		Text(greet)
+        VStack {
+            if let universalLink = universalLink {
+                ComposeView(universalLink: universalLink)
+            } else {
+                Text("loading")
+            }
+        }
+        .onOpenURL(perform: { url in
+            universalLink = url
+        })
 	}
 }
 

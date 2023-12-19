@@ -10,14 +10,14 @@ android {
         applicationId = "de.gematik.gsia.android"
         minSdk = 28
         targetSdk = 34
-        versionCode = 10007
-        versionName = "1.0.7"
+        versionCode = 20003
+        versionName = "2.0.3"
     }
     buildFeatures {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.7"
+        kotlinCompilerExtensionVersion = "1.5.3"
     }
     packaging {
         resources {
@@ -40,12 +40,12 @@ android {
 
 dependencies {
     implementation(project(":shared"))
-    implementation("androidx.compose.ui:ui:1.5.1")
-    implementation("androidx.compose.ui:ui-tooling:1.5.1")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.5.1")
-    implementation("androidx.compose.foundation:foundation:1.5.1")
-    implementation("androidx.compose.material:material:1.5.1")
-    implementation("androidx.activity:activity-compose:1.7.2")
+    implementation("androidx.compose.ui:ui:1.5.4")
+    implementation("androidx.compose.ui:ui-tooling:1.5.4")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.5.4")
+    implementation("androidx.compose.foundation:foundation:1.5.4")
+    implementation("androidx.compose.material:material:1.5.4")
+    implementation("androidx.activity:activity-compose:1.8.1")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.2")
     implementation("io.ktor:ktor-client-okhttp:2.3.4")

@@ -23,12 +23,11 @@ import android.net.Uri
 import androidx.core.content.ContextCompat.startActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
-import dev.icerock.moko.resources.ImageResource
-import dev.icerock.moko.resources.compose.painterResource
 
 @Composable
 internal actual fun getGematikLogoPainter(): Painter {
-    return painterResource(ImageResource(R.drawable.gematik))
+    // return painterResource(ImageResource(R.drawable.gematik))
+    TODO("Not yet implemented")
 }
 
 actual fun executeDeeplink(context: Any?, uri: String) {
