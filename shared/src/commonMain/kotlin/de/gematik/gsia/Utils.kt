@@ -17,7 +17,14 @@
 
 package de.gematik.gsia
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.rememberCoroutineScope
+import com.russhwolf.settings.Settings
+import com.russhwolf.settings.get
+import de.gematik.gsia.data.StateData
 import io.ktor.http.Url
+import kotlinx.coroutines.launch
 
 fun getAppRedirectUri(url: Url): String {
     return decomposeIntent(url).third
@@ -35,4 +42,25 @@ fun decomposeIntent(url: Url): Triple<String, String, String> {
         first = url.toString().split("?")[0],
         second = url.parameters["request_uri"]!!,
         third = url.parameters["client_id"]!!)
+}
+
+@Composable
+fun getClaims(intent: Url, context: Any, data: MutableState<StateData>, settings: Settings) {
+    val scope = rememberCoroutineScope()
+    val (redirectUrl, requestUri, _) = decomposeIntent(intent)
+
+    scope.launch {
+        try {
+            data.value = data.value.copy(
+                claims = HttpController(settings["auth_key", ""]).authorizationRequestGetClaims(
+                    redirectUrl,
+                    requestUri
+                ).associateWith { true }.toMutableMap()
+            )
+
+            println("App-App-Flow Nr 6a RX: (${data.value.claims.size} Claims received) ${data.value.claims}")
+        } catch (e: Exception) {
+            executeDeeplink(context, "$intent&error_msg=$e")
+        }
+    }
 }

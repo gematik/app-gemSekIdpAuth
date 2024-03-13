@@ -17,6 +17,7 @@
 
 package de.gematik.gsia
 
+import de.gematik.gsia.Constants.debug
 import io.ktor.client.HttpClient
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -26,11 +27,20 @@ import io.ktor.http.URLBuilder
 import io.ktor.http.Url
 
 
-class HttpController {
-    private val X_AUTH_HEADER = "hidden/hidden"  // enter X_AUTH_HEADER here
+class HttpController(private val x_auth: String) {
 
     private val client = HttpClient() {
         followRedirects = false
+    }
+
+    private fun formatClaims(claims: List<String>): String {
+        var out = ""
+        for (claim in claims) {
+            out += "$claim "
+        }
+        out.removeSuffix(" ")
+
+        return out
     }
 
     /**
@@ -41,23 +51,53 @@ class HttpController {
      * @param userId userId is optional because the userId is constant for GSI
      * @return redirect to DiGA containing AUTH_CODE
      */
-    suspend fun authorizationRequest(redirectUrl: String, requestUri: String, userId: String = "12345678"): String {
+    suspend fun authorizationRequestGetClaims(redirectUrl: String, requestUri: String): List<String> {
 
-        val url = Url("$redirectUrl?user_id=$userId&request_uri=$requestUri")
-        println("App-App-Flow Nr 6 TX: $url")
+        val url = Url("$redirectUrl?device_type=android&request_uri=$requestUri")  // get claims
         val response: HttpResponse = client.get(url) {
-                header("X-Authorization", X_AUTH_HEADER)
+            header("X-Authorization", x_auth)
+        }
+        println("App-App-Flow Nr 6 TX: $url")
+
+        if (debug) {
+            println("Response Body: ${response.bodyAsText()}")
+            println("Response Header: ${response.headers.entries()}")
+            println("Response: $response")
         }
 
-        println("Response Body: ${response.bodyAsText()}")
-        println("Response: $response")
+        var claims: String = response.bodyAsText().dropWhile { it != '[' }
+        claims = claims.replace("[","")
+                       .replace("]","")
+                       .replace("}","")
+                       .replace("\"","")
+
+        return claims.split(",")
+    }
+
+    suspend fun authorizationRequestSendClaims(
+        redirectUrl: String,
+        requestUri: String,
+        userId: String = "12345678",
+        claims: List<String>
+    ): String {
+        val url = Url("$redirectUrl?user_id=$userId&request_uri=$requestUri&selected_claims=${formatClaims(claims)}")
+        val response: HttpResponse = client.get(url) {
+            header("X-Authorization", x_auth)
+        }
+        println("App-App-Flow Nr 6b TX: $url")
+
+        if (debug) {
+            println("Response Body: ${response.bodyAsText()}")
+            println("Response Header: ${response.headers.entries()}")
+            println("Response: $response")
+        }
 
         val redirect = URLBuilder(response.headers["Location"] ?: "").build()
 
-        println("App-App-Flow Nr 7 RX: $redirect")
-
         redirect.parameters["code"] ?: throw Exception("No AuthCode Recevied")
         redirect.parameters["state"] ?: throw Exception("No State Recevied")
+
+        println("App-App-Flow Nr 7 RX: $response")
 
         return redirect.toString()
     }

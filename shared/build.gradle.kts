@@ -25,17 +25,6 @@ kotlin {
         }
     }
 
-/* iOS app will be added in near future
-    listOf(
-        iosArm64(),
-    ).forEach {
-        it.binaries.framework {
-            baseName = "shared"
-            isStatic = true
-        }
-    }
- */
-
     iosArm64().binaries.framework {
         baseName = "shared"
         isStatic = true
@@ -43,6 +32,7 @@ kotlin {
 
     sourceSets {
         val ktorVersion = "2.3.4"
+        val voyagerVersion = "1.0.0"
 
         val commonMain by getting {
             dependencies {
@@ -55,6 +45,13 @@ kotlin {
                 implementation(compose.material)
                 @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
                 implementation(compose.components.resources)
+
+                // Shared Preferences for multiplatform
+                implementation("com.russhwolf:multiplatform-settings-no-arg:1.1.1")
+                // Viewmodel Manager
+                implementation("cafe.adriel.voyager:voyager-screenmodel:$voyagerVersion")
+                implementation("cafe.adriel.voyager:voyager-navigator:$voyagerVersion")
+                implementation("cafe.adriel.voyager:voyager-bottom-sheet-navigator:$voyagerVersion")
             }
         }
         val commonTest by getting {
@@ -63,11 +60,13 @@ kotlin {
             }
         }
 
+        /*
         val iosMain by getting {
             dependencies {
                 implementation("io.ktor:ktor-client-ios:$ktorVersion")
             }
         }
+        */
 
         val androidMain by getting {
             dependencies {
