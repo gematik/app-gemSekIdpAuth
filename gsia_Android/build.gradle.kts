@@ -10,8 +10,9 @@ android {
         applicationId = "de.gematik.gsia.android"
         minSdk = 28
         targetSdk = 34
-        versionCode = 20100
-        versionName = "2.1.0"
+        versionCode = 20107
+        versionName = "2.1.7"
+        signingConfig = signingConfigs.getByName("debug")
     }
     buildFeatures {
         compose = true
@@ -28,6 +29,10 @@ android {
         getByName("release") {
             isMinifyEnabled = false
         }
+        create("debug_projectSigning") {
+            isDebuggable = true
+            signingConfig = signingConfigs.getByName("debug")
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -35,6 +40,15 @@ android {
     }
     kotlinOptions {
         jvmTarget = "1.8"
+    }
+
+    signingConfigs {
+        getByName("debug") {
+            keyAlias = "key0"
+            keyPassword = "vEbGC7G_WW"
+            storeFile = project.rootProject.file("keystore/keystore.jks")
+            storePassword = "G8zrS5TPVFdQY-kjYwmz"
+        }
     }
 }
 

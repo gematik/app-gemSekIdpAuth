@@ -34,14 +34,20 @@ fun checkIntentCorrectness(url: Url?): Boolean {
 
     url ?: return false;
 
-    return url.parameters.contains("request_uri") && url.parameters.contains("client_id")
+    return url.parameters.contains("request_uri") && (url.parameters.contains("client_id") || url.parameters.contains("user_id"))
 }
 
 fun decomposeIntent(url: Url): Triple<String, String, String> {
     return Triple(
         first = url.toString().split("?")[0],
-        second = url.parameters["request_uri"]!!,
-        third = url.parameters["client_id"]!!)
+        second = if (url.parameters.contains("request_uri")) url.parameters["request_uri"]!! else "",
+        third = if (url.parameters.contains("client_id"))
+            url.parameters["client_id"]!!
+        else if (url.parameters.contains("user_id"))
+            url.parameters["user_id"]!!
+        else
+            ""
+        )
 }
 
 @Composable
@@ -60,7 +66,11 @@ fun getClaims(intent: Url, context: Any, data: MutableState<StateData>, settings
 
             println("App-App-Flow Nr 6a RX: (${data.value.claims.size} Claims received) ${data.value.claims}")
         } catch (e: Exception) {
-            executeDeeplink(context, "$intent&error_msg=$e")
+            data.value = data.value.copy(
+                claims = mutableMapOf()
+            )
+            // throw e
+            // executeDeeplink(context, "$intent&error_msg=$e")
         }
     }
 }

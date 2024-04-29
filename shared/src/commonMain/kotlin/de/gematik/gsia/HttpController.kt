@@ -71,6 +71,18 @@ class HttpController(private val x_auth: String) {
                        .replace("}","")
                        .replace("\"","")
 
+        /*
+        return listOf(
+            "display_name",
+            "email",
+            "given_name",
+            "organization",
+            "birthdate",
+            "claims_id",
+            "claims_alter",
+            "claims_profession"
+        )
+         */
         return claims.split(",")
     }
 
@@ -80,6 +92,8 @@ class HttpController(private val x_auth: String) {
         userId: String = "12345678",
         claims: List<String>
     ): String {
+        println(claims)
+
         val url = Url("$redirectUrl?user_id=$userId&request_uri=$requestUri&selected_claims=${formatClaims(claims)}")
         val response: HttpResponse = client.get(url) {
             header("X-Authorization", x_auth)
@@ -94,7 +108,7 @@ class HttpController(private val x_auth: String) {
 
         val redirect = URLBuilder(response.headers["Location"] ?: "").build()
 
-        redirect.parameters["code"] ?: throw Exception("No AuthCode Recevied")
+        redirect.parameters["code"] ?: throw Exception("No AuthCode Recevied from gemSekIdp")
         redirect.parameters["state"] ?: throw Exception("No State Recevied")
 
         println("App-App-Flow Nr 7 RX: $response")

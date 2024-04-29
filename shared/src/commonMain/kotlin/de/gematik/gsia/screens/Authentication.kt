@@ -19,7 +19,6 @@ package de.gematik.gsia.screens
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
-import cafe.adriel.voyager.core.screen.Screen
 import com.russhwolf.settings.Settings
 import de.gematik.gsia.Body
 import de.gematik.gsia.Constants.debug
@@ -28,24 +27,30 @@ import de.gematik.gsia.getAppRedirectUri
 import de.gematik.gsia.getClaims
 import io.ktor.http.Url
 
-class Authentication(
-    val intent: Url,
-    val context: Any,
-    val data: MutableState<StateData>,
-    val settings: Settings
-): Screen {
-    @Composable
-    override fun Content() {
 
-        if (debug) {
-            println("Intent valid")
-        }
+@Composable
+fun Authentication(
+    intent: Url,
+    context: Any,
+    data: MutableState<StateData>,
+    settings: Settings
+) {
 
-        if (data.value.claims.isEmpty()) {
-            println("App-App-Flow Nr 5 RX: $intent")
-            getClaims(intent, context, data, settings)
-        }
-
-        Body(intent, context, Url(getAppRedirectUri(intent)), intent.parameters["error_msg"], data, settings)
+    if (debug) {
+        println("Intent valid")
+        println("$intent")
     }
+
+    if (intent.parameters.contains("error_msg")) {
+        println("Error: " + intent.parameters["error_msg"])
+        println("possible reasons: no claim accepted, kvnr changed")
+    }
+
+    if (data.value.claims.isEmpty()) {
+        println("App-App-Flow Nr 5 RX: $intent")
+        getClaims(intent, context, data, settings)
+    }
+
+    Body(intent, context, Url(getAppRedirectUri(intent)), intent.parameters["error_msg"], data, settings)
 }
+
