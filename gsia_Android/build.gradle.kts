@@ -10,8 +10,9 @@ android {
         applicationId = "de.gematik.gsia.android"
         minSdk = 28
         targetSdk = 34
-        versionCode = 20100
-        versionName = "2.1.0"
+        versionCode = 20108
+        versionName = "2.1.8"
+        signingConfig = signingConfigs.getByName("debug")
     }
     buildFeatures {
         compose = true
@@ -28,6 +29,10 @@ android {
         getByName("release") {
             isMinifyEnabled = false
         }
+        create("debug_projectSigning") {
+            isDebuggable = true
+            signingConfig = signingConfigs.getByName("debug")
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -36,6 +41,7 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+
 }
 
 dependencies {

@@ -32,7 +32,6 @@ kotlin {
 
     sourceSets {
         val ktorVersion = "2.3.4"
-        val voyagerVersion = "1.0.0"
 
         val commonMain by getting {
             dependencies {
@@ -48,10 +47,6 @@ kotlin {
 
                 // Shared Preferences for multiplatform
                 implementation("com.russhwolf:multiplatform-settings-no-arg:1.1.1")
-                // Viewmodel Manager
-                implementation("cafe.adriel.voyager:voyager-screenmodel:$voyagerVersion")
-                implementation("cafe.adriel.voyager:voyager-navigator:$voyagerVersion")
-                implementation("cafe.adriel.voyager:voyager-bottom-sheet-navigator:$voyagerVersion")
             }
         }
         val commonTest by getting {
@@ -95,4 +90,9 @@ android {
     }
 
     sourceSets["main"].resources.srcDirs("src/commonMain/resources")
+    buildTypes {
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
 }

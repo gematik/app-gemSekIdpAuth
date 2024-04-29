@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.absolutePadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,9 +33,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.Divider
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.Composable
@@ -54,19 +54,13 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.get
 import com.russhwolf.settings.set
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.Navigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import de.gematik.gsia.Constants.debug
 import de.gematik.gsia.data.StateData
 import de.gematik.gsia.screens.Authentication
-import de.gematik.gsia.screens.IncorrectIntent
-import de.gematik.gsia.screens.SelectInsuredPerson
 import io.ktor.http.Url
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
@@ -110,7 +104,8 @@ fun FilledButton(label: String, onClick: () -> Unit = ({ }), modifier: Modifier)
 }
 
 @Composable
-private fun RequestInfo(appRedirectUri: Url) {
+private fun RequestInfo(intent: Url) {
+    /*
     Text(
         modifier = Modifier
             .padding(5.dp)
@@ -120,6 +115,39 @@ private fun RequestInfo(appRedirectUri: Url) {
         fontFamily = FontFamily.SansSerif,
         fontSize = 20.sp,
     )
+     */
+
+    val (redirectUrl, requestUri, clientId) = decomposeIntent(intent)
+
+    Column(
+        modifier = Modifier
+            .padding(5.dp)
+            .border(BorderStroke(1.dp, Color.Black))
+            .padding(5.dp)
+            .fillMaxWidth()
+    ) {
+        Text(
+            text = "Authorization Request!",
+            fontFamily = FontFamily.SansSerif,
+            fontSize = 18.sp
+        )
+        Row(
+
+        ) {
+            Column {
+                Text("sekIDP")
+                Text("RP")
+            }
+            Spacer(modifier = Modifier.width(10.dp))
+            Column {
+                Text(redirectUrl, maxLines = 1)
+                if (intent.toString().contains("client_id"))
+                    Text(clientId, maxLines = 1)
+                else
+                    Text("client_id was not part of response")
+            }
+        }
+    }
 }
 
 @Composable
@@ -133,7 +161,7 @@ private fun DisplayError(errorMsg: String?) {
 }
 
 @Composable
-private fun ListClaims(data: MutableState<StateData>) {
+private fun ListClaims(modifier: Modifier, data: MutableState<StateData>) {
     val selectedClaims = remember { mutableStateMapOf<String, Boolean>() }
 
     data.value.claims.forEach { (key, value) ->
@@ -141,25 +169,24 @@ private fun ListClaims(data: MutableState<StateData>) {
     }
 
     Column (
+        modifier = modifier.then(Modifier.verticalScroll(rememberScrollState())),
         horizontalAlignment = Alignment.CenterHorizontally
     ){
         Text("available Claims", fontWeight = FontWeight.Bold, fontSize = 20.sp)
 
-        Column(
-            modifier = Modifier
-        ) {
+        Column {
             selectedClaims.forEach { (claim, value) ->
                 Row(
                     modifier = Modifier
                         .clickable {
                             selectedClaims[claim] = !selectedClaims[claim]!!
-                            if (Constants.debug) {
+                            if (debug) {
                                 println(data.value.claims)
                                 println("$claim ${selectedClaims[claim]}")
                             }
                             data.value.claims = selectedClaims
                         }
-                        .padding(12.dp)
+                        .padding(horizontal = 12.dp, vertical = 7.dp)
                         .fillMaxWidth()
                         .height(40.dp)
                         .background(color = if (value) Color.Green.copy(alpha = 0.5f) else Color.Red.copy(alpha = 0.5f))
@@ -168,15 +195,15 @@ private fun ListClaims(data: MutableState<StateData>) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        fontSize = 4.em,
+                        fontSize = 15.sp,
                         text = claim,
                     )
                     Text(
-                        fontSize = 4.em,
+                        fontSize = 15.sp,
                         text = if (value) "granted" else "denied"
                     )
                 }
-                Divider(modifier = Modifier.padding(vertical = 5.dp))
+                // Divider(modifier = Modifier.padding(vertical = 5.dp))
             }
         }
     }
@@ -237,21 +264,6 @@ fun SetAuthKey(settings: Settings) {
     }
 }
 
-@Composable
-private fun BtnNavToSelectInsuredPeople(intent: Url, context: Any, data: MutableState<StateData>) {
-    val navigator = LocalNavigator.currentOrThrow
-
-    FilledButton("Set InsuredPerson",
-        onClick = {
-            navigator.push(item = SelectInsuredPerson(intent, context, data))
-        },
-        modifier = Modifier
-            .padding(horizontal = 20.dp)
-            .fillMaxWidth()
-            .height(50.dp)
-    )
-}
-
 /**
  * This function provides a list of test identities. A kvnr can be chosen from the list but can also
  * be entered manually via the textbox. The given kvnr is used for the following authentication
@@ -265,9 +277,8 @@ private fun BtnNavToSelectInsuredPeople(intent: Url, context: Any, data: Mutable
 fun BtnAuthentication(
     intent: Url,
     context: Any,
-    claims: List<String>,
-    kvnr: String,
-    settings: Settings
+    settings: Settings,
+    data: MutableState<StateData>
 ) {
     val scope = rememberCoroutineScope()
     val (redirectUrl, requestUri, _) = decomposeIntent(intent)
@@ -275,8 +286,6 @@ fun BtnAuthentication(
 
     return Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .padding(bottom = 20.dp)
     ) {
         Row(
             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -292,8 +301,8 @@ fun BtnAuthentication(
                         val response = HttpController(settings["auth_key", ""]).authorizationRequestSendClaims(
                             redirectUrl,
                             requestUri,
-                            kvnr,
-                            claims
+                            data.value.kvnr,
+                            data.value.claims.filter { it.value }.map { it.key }
                         )
 
                         println("App-App-Flow Nr 8 TX: $response")
@@ -342,18 +351,22 @@ fun Body(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        Column {
-            RequestInfo(appRedirectUri)
+        Column(
+            modifier = Modifier.height(100.dp)
+        ) {
+            RequestInfo(intent)
             DisplayError(errorMsg)
         }
 
-        ListClaims(data)
+        ListClaims(modifier = Modifier.fillMaxHeight().weight(1f), data)
 
-        Column {
+        Column(
+            modifier = Modifier.height(320.dp)
+        ){
             SetAuthKey(settings)
-            BtnNavToSelectInsuredPeople(intent, context, data)
             TextFieldKVNR(data)
-            BtnAuthentication(intent, context, data.value.claims.filter { it.value }.map { it.key }, data.value.kvnr, settings)
+
+            BtnAuthentication(intent, context, settings, data)
         }
     }
 }
@@ -362,15 +375,21 @@ fun Body(
 fun App(context: Any, intent: String) {
 
     val settings: Settings = Settings()
-    val data = remember { mutableStateOf(StateData("X123456784", mutableMapOf())) }
+    val (_, _, userId) = decomposeIntent(Url(intent))
+
+    val kvnr: String =
+    if (intent.contains("user_id"))
+        userId
+    else
+        "X123456784"
+
+    val data = remember { mutableStateOf(StateData(kvnr, mutableMapOf())) }
 
     if (!checkIntentCorrectness(Url(intent))) {
-        Navigator(
-            screen = IncorrectIntent(Url(intent), context)
-        )
+        println("incorrect intent")
+        println(intent)
+        // IncorrectIntent(Url(intent), context)
     } else {
-        Navigator(
-            screen = Authentication(Url(intent), context, data, settings)
-        )
+        Authentication(Url(intent), context, data, settings)
     }
 }
