@@ -24,6 +24,7 @@
 
                 <data android:scheme="https"/>
                 <data android:host="gsi.dev.gematik.solutions"/>
+                <data android:host="gsi-ref.dev.gematik.solutions"/>
                 <data android:pathPrefix="/auth"/>
             </intent-filter>
         </activity>

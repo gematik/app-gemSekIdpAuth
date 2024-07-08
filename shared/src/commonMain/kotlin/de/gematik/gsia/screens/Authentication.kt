@@ -18,39 +18,35 @@
 package de.gematik.gsia.screens
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import com.russhwolf.settings.Settings
+import androidx.lifecycle.viewmodel.compose.viewModel
 import de.gematik.gsia.Body
 import de.gematik.gsia.Constants.debug
-import de.gematik.gsia.data.StateData
+import de.gematik.gsia.data.GSIAViewModel
 import de.gematik.gsia.getAppRedirectUri
 import de.gematik.gsia.getClaims
 import io.ktor.http.Url
 
 
 @Composable
-fun Authentication(
-    intent: Url,
-    context: Any,
-    data: MutableState<StateData>,
-    settings: Settings
-) {
+fun Authentication() {
+
+    val viewModel: GSIAViewModel = viewModel { GSIAViewModel() }
 
     if (debug) {
         println("Intent valid")
-        println("$intent")
+        println("${viewModel.intent.value}")
     }
 
-    if (intent.parameters.contains("error_msg")) {
-        println("Error: " + intent.parameters["error_msg"])
+    if (viewModel.intent.value.parameters.contains("error_msg")) {
+        println("Error: " + viewModel.intent.value.parameters["error_msg"])
         println("possible reasons: no claim accepted, kvnr changed")
     }
 
-    if (data.value.claims.isEmpty()) {
-        println("App-App-Flow Nr 5 RX: $intent")
-        getClaims(intent, context, data, settings)
+    if (viewModel.claims.isEmpty()) {
+        println("App-App-Flow Nr 5 RX: ${viewModel.intent.value}")
+        getClaims()
     }
 
-    Body(intent, context, Url(getAppRedirectUri(intent)), intent.parameters["error_msg"], data, settings)
+    Body(Url(getAppRedirectUri(viewModel.intent.value)), viewModel.intent.value.parameters["error_msg"])
 }
 

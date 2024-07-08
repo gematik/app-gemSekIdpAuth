@@ -53,14 +53,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.get
 import com.russhwolf.settings.set
 import de.gematik.gsia.Constants.debug
+import de.gematik.gsia.data.GSIAViewModel
 import de.gematik.gsia.data.StateData
 import de.gematik.gsia.screens.Authentication
+import de.gematik.gsia.screens.OpenedWithoutDeeplink
 import io.ktor.http.Url
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.ExperimentalResourceApi
@@ -87,7 +91,7 @@ fun FilledButton(label: String, onClick: () -> Unit = ({ })) {
 }
 
 @Composable
-fun FilledButton(label: String, onClick: () -> Unit = ({ }), modifier: Modifier) {
+fun FilledButton(label: String, onClick: () -> Unit = ({ }), modifier: Modifier, fontSize: TextUnit = 20.sp) {
     Button(
         modifier = modifier,
         colors = ButtonDefaults.buttonColors(backgroundColor = Color(1, 14, 82, 255)),
@@ -97,7 +101,7 @@ fun FilledButton(label: String, onClick: () -> Unit = ({ }), modifier: Modifier)
             text = label,
             color = Color(0, 255, 101, 255),
             fontFamily = FontFamily.SansSerif,
-            fontSize = 18.sp,
+            fontSize = fontSize,
             fontWeight = FontWeight.Bold
         )
     }
@@ -161,11 +165,12 @@ private fun DisplayError(errorMsg: String?) {
 }
 
 @Composable
-private fun ListClaims(modifier: Modifier, data: MutableState<StateData>) {
+private fun ListClaims(modifier: Modifier) {
+    val viewModel: GSIAViewModel = viewModel { GSIAViewModel() }
     val selectedClaims = remember { mutableStateMapOf<String, Boolean>() }
 
-    data.value.claims.forEach { (key, value) ->
-        selectedClaims[key] = value
+    viewModel.claims.forEach { (k, v) ->
+        selectedClaims[k] = v
     }
 
     Column (
@@ -175,16 +180,19 @@ private fun ListClaims(modifier: Modifier, data: MutableState<StateData>) {
         Text("available Claims", fontWeight = FontWeight.Bold, fontSize = 20.sp)
 
         Column {
+            if (viewModel.claims.size < 2)
+                Text(modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp),
+                    text = "Empty list of claims might be caused by empty/wrong X-Auth Key")
             selectedClaims.forEach { (claim, value) ->
                 Row(
                     modifier = Modifier
                         .clickable {
                             selectedClaims[claim] = !selectedClaims[claim]!!
                             if (debug) {
-                                println(data.value.claims)
+                                println(viewModel.claims)
                                 println("$claim ${selectedClaims[claim]}")
                             }
-                            data.value.claims = selectedClaims
+                            viewModel.setSelectedClaims(selectedClaims)
                         }
                         .padding(horizontal = 12.dp, vertical = 7.dp)
                         .fillMaxWidth()
@@ -210,13 +218,13 @@ private fun ListClaims(modifier: Modifier, data: MutableState<StateData>) {
 }
 
 @Composable
-private fun TextFieldKVNR(data: MutableState<StateData>) {
+private fun TextFieldKVNR() {
+    val viewModel: GSIAViewModel = viewModel { GSIAViewModel() }
+
     TextField(
-        value = data.value.kvnr,
+        value = viewModel.kvnr.value,
         onValueChange = {
-            data.value = data.value.copy(
-                kvnr = it
-            )
+            viewModel.setKVNR(it)
         },
         label = { Text(text = "KVNR") },
         modifier = Modifier
@@ -226,9 +234,10 @@ private fun TextFieldKVNR(data: MutableState<StateData>) {
 }
 
 @Composable
-fun SetAuthKey(settings: Settings) {
+fun SetAuthKey() {
 
-    var authkey by remember { mutableStateOf(TextFieldValue(settings["auth_key", ""])) }
+    val viewModel: GSIAViewModel = viewModel { GSIAViewModel() }
+    var authkey by remember { mutableStateOf(TextFieldValue(viewModel.settings.value["auth_key", ""])) }
 
     Row(
         modifier = Modifier
@@ -242,7 +251,7 @@ fun SetAuthKey(settings: Settings) {
                 authkey = it
             },
             singleLine = true,
-            label = { Text(text = "Auth Key") },
+            label = { Text(text = "X-Auth Key") },
             modifier = Modifier
                 .height(60.dp)
                 .width(225.dp)
@@ -251,15 +260,60 @@ fun SetAuthKey(settings: Settings) {
             modifier = Modifier.width(10.dp)
         )
         FilledButton(
-            "Set AuthKey",
+            "Set X-AuthKey",
             modifier = Modifier
                 .size(width = 125.dp, height = 60.dp),
             onClick = {
-                settings.set("auth_key", authkey.text)
+                Toast(viewModel.context.value, "Set X-Auth Key. Change takes effect at next authentication")
+                viewModel.settings.value.set("auth_key", authkey.text)
                 if (debug) {
-                    println("Auth Key: " + settings["auth_key", ""])
+                    println("Auth Key: " + viewModel.settings.value["auth_key", ""])
                 }
             },
+            fontSize = 17.sp,
+        )
+    }
+}
+
+@Composable
+fun SetAuthKeyMax() {
+
+    val viewModel: GSIAViewModel = viewModel { GSIAViewModel() }
+    var authkey by remember { mutableStateOf(TextFieldValue(viewModel.settings.value["auth_key", ""])) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(20.dp),
+        horizontalArrangement = Arrangement.Start,
+    ) {
+        TextField(
+            value = authkey,
+            onValueChange = {
+                authkey = it
+            },
+            minLines = 4,
+            maxLines = 4,
+            label = { Text(text = "X-Auth Key") },
+            modifier = Modifier
+                .height(120.dp)
+                .width(225.dp)
+        )
+        Spacer(
+            modifier = Modifier.width(10.dp)
+        )
+        FilledButton(
+            "Set X-AuthKey",
+            modifier = Modifier
+                .size(width = 125.dp, height = 120.dp),
+            onClick = {
+                Toast(viewModel.context.value, "Set X-Auth Key. Change takes effect at next authentication")
+                viewModel.settings.value.set("auth_key", authkey.text)
+                if (debug) {
+                    println("Auth Key: " + viewModel.settings.value["auth_key", ""])
+                }
+            },
+            fontSize = 17.sp,
         )
     }
 }
@@ -274,15 +328,12 @@ fun SetAuthKey(settings: Settings) {
  * @return Column(...)
  */
 @Composable
-fun BtnAuthentication(
-    intent: Url,
-    context: Any,
-    settings: Settings,
-    data: MutableState<StateData>
-) {
+fun BtnAuthentication() {
+    val viewModel: GSIAViewModel = viewModel { GSIAViewModel() }
+
     val scope = rememberCoroutineScope()
-    val (redirectUrl, requestUri, _) = decomposeIntent(intent)
-    var authkey by remember { mutableStateOf(TextFieldValue(settings["auth_key", ""])) }
+    val (redirectUrl, requestUri, _) = decomposeIntent(viewModel.intent.value)
+    var authkey by remember { mutableStateOf(TextFieldValue(viewModel.settings.value["auth_key", ""])) }
 
     return Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -296,20 +347,25 @@ fun BtnAuthentication(
         ) {
             FilledButton("Accept", onClick = {
 
-                scope.launch {
-                    try {
-                        val response = HttpController(settings["auth_key", ""]).authorizationRequestSendClaims(
-                            redirectUrl,
-                            requestUri,
-                            data.value.kvnr,
-                            data.value.claims.filter { it.value }.map { it.key }
-                        )
+                if (viewModel.settings.value["auth_key", ""] == "") {
+                    Toast(viewModel.context.value, "You need to set X-Auth Key!")
+                } else {
+                    scope.launch {
+                        try {
+                            val response = HttpController(viewModel.settings.value["auth_key", ""]).authorizationRequestSendClaims(
+                                redirectUrl,
+                                requestUri,
+                                viewModel.kvnr.value,
+                                viewModel.claims.filter { it.value }.map { it.key }
+                            )
 
-                        println("App-App-Flow Nr 8 TX: $response")
-                        executeDeeplink(context, response)
+                            println("used kvnr: ${viewModel.kvnr.value}")
+                            println("App-App-Flow Nr 8 TX: $response")
+                            executeDeeplink(viewModel.context.value, response)
 
-                    } catch (e: Exception) {
-                        executeDeeplink(context, "$intent&error_msg=$e")
+                        } catch (e: Exception) {
+                            executeDeeplink(viewModel.context.value, "${viewModel.intent.value}&error_msg=$e")
+                        }
                     }
                 }
             })
@@ -320,6 +376,7 @@ fun BtnAuthentication(
     }
 }
 
+/*
 @OptIn(ExperimentalResourceApi::class)
 @Composable
 private fun DrawGematikLogo() {
@@ -332,19 +389,18 @@ private fun DrawGematikLogo() {
         )
     }
 }
+*/
 
 /**
  * This extends to a Column displaying the name of the App that called the GSIA App
  */
 @Composable
 fun Body(
-    intent: Url,
-    context: Any,
     appRedirectUri: Url,
     errorMsg: String?,
-    data: MutableState<StateData>,
-    settings: Settings
 ) {
+    val viewModel: GSIAViewModel = viewModel { GSIAViewModel() }
+
     Column (
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -354,19 +410,19 @@ fun Body(
         Column(
             modifier = Modifier.height(100.dp)
         ) {
-            RequestInfo(intent)
+            RequestInfo(viewModel.intent.value)
             DisplayError(errorMsg)
         }
 
-        ListClaims(modifier = Modifier.fillMaxHeight().weight(1f), data)
+        ListClaims(modifier = Modifier.fillMaxHeight().weight(1f))
 
         Column(
             modifier = Modifier.height(320.dp)
         ){
-            SetAuthKey(settings)
-            TextFieldKVNR(data)
+            SetAuthKey()
+            TextFieldKVNR()
 
-            BtnAuthentication(intent, context, settings, data)
+            BtnAuthentication()
         }
     }
 }
@@ -374,22 +430,24 @@ fun Body(
 @Composable
 fun App(context: Any, intent: String) {
 
+    val viewModel : GSIAViewModel = viewModel { GSIAViewModel() }
+
     val settings: Settings = Settings()
     val (_, _, userId) = decomposeIntent(Url(intent))
 
-    val kvnr: String =
-    if (intent.contains("user_id"))
-        userId
-    else
-        "X123456784"
+    viewModel.setIntent(Url(intent))
+    viewModel.setContext(context)
 
-    val data = remember { mutableStateOf(StateData(kvnr, mutableMapOf())) }
+    if (intent.contains("user_id"))
+        viewModel.setKVNR(userId)
+    else
+        viewModel.setKVNR("X123456784")
 
     if (!checkIntentCorrectness(Url(intent))) {
         println("incorrect intent")
         println(intent)
-        // IncorrectIntent(Url(intent), context)
+        OpenedWithoutDeeplink()
     } else {
-        Authentication(Url(intent), context, data, settings)
+        Authentication()
     }
 }
