@@ -1,9 +1,9 @@
 plugins {
-    //trick: for the same plugin versions in all sub-modules
-    id("com.android.application").version("8.0.0").apply(false)
-    id("com.android.library").version("8.0.0").apply(false)
     kotlin("android").version("1.8.21").apply(false)
     kotlin("multiplatform").version("1.9.10").apply(false)
+    alias(libs.plugins.compose.compiler) apply false
+    alias(libs.plugins.androidApplication) apply false
+    alias(libs.plugins.androidLibrary) apply false
 }
 
 buildscript {
@@ -12,7 +12,7 @@ buildscript {
     }
 
     dependencies {
-        classpath("dev.icerock.moko:resources-generator:0.22.0")
+        classpath(libs.resources.generator)
     }
 }
 

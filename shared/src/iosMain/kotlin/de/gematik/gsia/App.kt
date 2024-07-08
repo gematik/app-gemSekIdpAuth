@@ -52,3 +52,7 @@ actual fun executeDeeplink(context: Any?, uri: String) {
         )
     }
 }
+
+actual fun Toast(context: Any?, string: String) {
+
+}

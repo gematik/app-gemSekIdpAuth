@@ -1,8 +1,9 @@
 plugins {
-    id("com.android.library")
     kotlin("multiplatform")
 
-    id("org.jetbrains.compose") version "1.5.3"
+    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.jetbrainsCompose)
+    alias(libs.plugins.androidLibrary)
 
     // id("dev.icerock.mobile.multiplatform-resources")
 }
@@ -15,7 +16,7 @@ multiplatformResources {
 
 @OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
 kotlin {
-    targetHierarchy.default()
+    // targetHierarchy.default()
 
     android {
         compilations.all {
@@ -35,18 +36,20 @@ kotlin {
 
         val commonMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-core:$ktorVersion")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.2")
+                implementation(libs.ktor.client)
+                implementation(libs.kotlinx.coroutine)
+                implementation(libs.compose.viewmodel)
 
                 // check if all components are really necessary
                 implementation(compose.ui)
                 implementation(compose.foundation)
                 implementation(compose.material)
+
                 @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
                 implementation(compose.components.resources)
 
                 // Shared Preferences for multiplatform
-                implementation("com.russhwolf:multiplatform-settings-no-arg:1.1.1")
+                implementation(libs.multiplatform.settings.no.arg)
             }
         }
         val commonTest by getting {
@@ -65,8 +68,8 @@ kotlin {
 
         val androidMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
-                implementation("androidx.activity:activity-compose:1.8.1")
+                implementation(libs.ktor.client.okhttp)
+                implementation(libs.activity.compose)
             }
 
         }
