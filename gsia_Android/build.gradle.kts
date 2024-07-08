@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     kotlin("android")
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -10,8 +11,8 @@ android {
         applicationId = "de.gematik.gsia.android"
         minSdk = 28
         targetSdk = 34
-        versionCode = 20108
-        versionName = "2.1.8"
+        versionCode = 20113
+        versionName = "2.1.13"
         signingConfig = signingConfigs.getByName("debug")
     }
     buildFeatures {

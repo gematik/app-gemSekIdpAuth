@@ -18,11 +18,10 @@
 package de.gematik.gsia
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.rememberCoroutineScope
-import com.russhwolf.settings.Settings
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.russhwolf.settings.get
-import de.gematik.gsia.data.StateData
+import de.gematik.gsia.data.GSIAViewModel
 import io.ktor.http.Url
 import kotlinx.coroutines.launch
 
@@ -51,24 +50,26 @@ fun decomposeIntent(url: Url): Triple<String, String, String> {
 }
 
 @Composable
-fun getClaims(intent: Url, context: Any, data: MutableState<StateData>, settings: Settings) {
+fun getClaims() {
+
+    val viewModel: GSIAViewModel = viewModel { GSIAViewModel() }
+
     val scope = rememberCoroutineScope()
-    val (redirectUrl, requestUri, _) = decomposeIntent(intent)
+    val (redirectUrl, requestUri, _) = decomposeIntent(viewModel.intent.value)
+
 
     scope.launch {
         try {
-            data.value = data.value.copy(
-                claims = HttpController(settings["auth_key", ""]).authorizationRequestGetClaims(
-                    redirectUrl,
-                    requestUri
-                ).associateWith { true }.toMutableMap()
-            )
+            val claims = HttpController(viewModel.settings.value["auth_key", ""]).authorizationRequestGetClaims(
+                redirectUrl,
+                requestUri
+            ).associateWith { true }.toMutableMap()
 
-            println("App-App-Flow Nr 6a RX: (${data.value.claims.size} Claims received) ${data.value.claims}")
+            viewModel.setSelectedClaims(claims)
+
+            println("App-App-Flow Nr 6a RX: (${viewModel.claims.size} Claims received) ${viewModel.claims}")
         } catch (e: Exception) {
-            data.value = data.value.copy(
-                claims = mutableMapOf()
-            )
+            viewModel.resetClaims()
             // throw e
             // executeDeeplink(context, "$intent&error_msg=$e")
         }

@@ -1,5 +1,12 @@
+# Release 2.1.11
+- add layout for manual start of GSIA
+- X-Auth Key can be set if GSIA is started manually
+
+# Release 2.1.10
+- better user feedback
+
 # Release 2.1.8
-- new singing key -> update required; older version no longer working
+- new signing key -> update required; older version no longer working
 
 # Release 2.1.6
 - crashes that occur after authentication are fixed

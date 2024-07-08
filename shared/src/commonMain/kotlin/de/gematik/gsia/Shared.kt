@@ -29,3 +29,5 @@ internal expect fun getGematikLogoPainter(): Painter
  * @param uri Uri für die aufrufende App
  */
 expect fun executeDeeplink(context: Any? = null, uri: String)
+
+expect fun Toast(context: Any? = null, string: String)
