@@ -1,3 +1,6 @@
+# Release 2.1.14
+- add support for local development setup
+
 # Release 2.1.11
 - add layout for manual start of GSIA
 - X-Auth Key can be set if GSIA is started manually
