@@ -29,9 +29,7 @@ import io.ktor.http.Url
 
 class HttpController(private val x_auth: String) {
 
-    private val client = HttpClient() {
-        followRedirects = false
-    }
+    private val client = PlatformHttpEngine
 
     private fun formatClaims(claims: List<String>): String {
         var out = ""

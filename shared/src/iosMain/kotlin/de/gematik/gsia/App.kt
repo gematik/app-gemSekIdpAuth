@@ -19,6 +19,7 @@ package de.gematik.gsia
 import androidx.compose.ui.window.ComposeUIViewController
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
+import io.ktor.client.HttpClient
 import io.ktor.http.Url
 import platform.Foundation.NSURL
 import platform.UIKit.UIApplication
@@ -28,17 +29,6 @@ import platform.UIKit.UIDevice
 
 fun MainViewController(url: String?) = ComposeUIViewController { App("Dummy()", url ?: "") }
 
-// @Composable
-// internal actual fun getGematikLogoPainter(): Painter {
-//     return painterResource(ImageResource(R.drawable.gematik))
-// }
-
-// actual fun executeDeeplink(context: Any?, uri: String) {
-//     // startActivity(Intent(Intent.ACTION_VIEW))
-//     startActivity(context as Context, Intent(Intent.ACTION_VIEW).apply {
-//         data = Uri.parse(uri)
-//     }, null)
-// }
 typealias APPObject = UIApplication
 
 actual fun executeDeeplink(context: Any?, uri: String) {
@@ -56,3 +46,5 @@ actual fun executeDeeplink(context: Any?, uri: String) {
 actual fun Toast(context: Any?, string: String) {
 
 }
+
+actual val PlatformHttpEngine = HttpClient() { followRedirects = false }

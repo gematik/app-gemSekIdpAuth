@@ -3,7 +3,7 @@ activity-compose = "1.9.0"
 agp = "8.5.0"
 kotlin = "2.0.0"
 compose-plugin = "1.6.10"
-ktor = "2.3.4"
+ktor = "2.3.12"
 kotlinx = "1.7.2"
 multiplatform-settings-no-arg = "1.1.1"
 compose-viewmodel = "2.8.0"
@@ -14,6 +14,7 @@ resources-generator = "0.22.0"
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
 ktor-client = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 kotlinx-coroutine = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx" }
+ktor-client-ios = { module = "io.ktor:ktor-client-ios", version.ref = "ktor" }
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 multiplatform-settings-no-arg = { module = "com.russhwolf:multiplatform-settings-no-arg", version.ref = "multiplatform-settings-no-arg" }
 compose-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "compose-viewmodel" }
