@@ -1,3 +1,6 @@
+# Release 2.1.16
+- add iOS support
+
 # Release 2.1.14
 - add support for local development setup
 

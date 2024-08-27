@@ -19,9 +19,8 @@ package de.gematik.gsia
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
-
-@Composable
-internal expect fun getGematikLogoPainter(): Painter
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.HttpClientEngine
 
 /**
  * Mit dieser Funktion wird ein Deeplink ausgeführt.
@@ -31,3 +30,5 @@ internal expect fun getGematikLogoPainter(): Painter
 expect fun executeDeeplink(context: Any? = null, uri: String)
 
 expect fun Toast(context: Any? = null, string: String)
+
+expect val PlatformHttpEngine: HttpClient

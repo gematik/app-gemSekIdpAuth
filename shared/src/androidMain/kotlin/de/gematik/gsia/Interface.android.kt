@@ -27,12 +27,9 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat.startActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
-
-@Composable
-internal actual fun getGematikLogoPainter(): Painter {
-    // return painterResource(ImageResource(R.drawable.gematik))
-    TODO("Not yet implemented")
-}
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.HttpClientEngine
+import okhttp3.internal.platform.Platform
 
 actual fun executeDeeplink(context: Any?, uri: String) {
     // startActivity(Intent(Intent.ACTION_VIEW))
@@ -44,3 +41,5 @@ actual fun executeDeeplink(context: Any?, uri: String) {
 actual fun Toast(context: Any?, string: String) {
     Toast.makeText(context as Context, string, Toast.LENGTH_SHORT).show()
 }
+
+actual val PlatformHttpEngine = HttpClient() { followRedirects = false }

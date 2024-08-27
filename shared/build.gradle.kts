@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
+
 plugins {
     kotlin("multiplatform")
 
@@ -18,7 +20,7 @@ multiplatformResources {
 kotlin {
     // targetHierarchy.default()
 
-    android {
+    androidTarget {
         compilations.all {
             kotlinOptions {
                 jvmTarget = "1.8"
@@ -26,9 +28,14 @@ kotlin {
         }
     }
 
-    iosArm64().binaries.framework {
-        baseName = "shared"
-        isStatic = true
+    val xcf = XCFramework()
+    val iosTargets = listOf(iosX64(), iosArm64(), iosSimulatorArm64())
+
+    iosTargets.forEach {
+        it.binaries.framework {
+            baseName = "shared"
+            xcf.add(this)
+        }
     }
 
     sourceSets {
@@ -58,20 +65,15 @@ kotlin {
             }
         }
 
-        /*
-        val iosMain by getting {
-            dependencies {
-                implementation("io.ktor:ktor-client-ios:$ktorVersion")
-            }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.ios)
         }
-        */
 
         val androidMain by getting {
             dependencies {
                 implementation(libs.ktor.client.okhttp)
                 implementation(libs.activity.compose)
             }
-
         }
     }
 }

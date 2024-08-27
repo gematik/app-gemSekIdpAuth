@@ -5,7 +5,8 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:kk.dev.gematik.solutions?mode=developer</string>
-		<string>applinks:gsi.dev.gematik.solutions?mode=developer</string>
+		<string>applinks:gsi.dev.gematik.solutions</string>
+		<string>applinks:gsi-ref.dev.gematik.solutions</string>
 	</array>
 </dict>
 </plist>
