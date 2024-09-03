@@ -9,6 +9,7 @@
         android:supportsRtl="true"
         android:label="GSIA"
         android:theme="@style/AppTheme"
+        android:icon="@mipmap/gesundheits_id_logo_round"
         android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"

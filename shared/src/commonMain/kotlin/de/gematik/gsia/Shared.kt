@@ -17,10 +17,7 @@
 
 package de.gematik.gsia
 
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.painter.Painter
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.HttpClientEngine
 
 /**
  * Mit dieser Funktion wird ein Deeplink ausgeführt.
@@ -29,6 +26,6 @@ import io.ktor.client.engine.HttpClientEngine
  */
 expect fun executeDeeplink(context: Any? = null, uri: String)
 
-expect fun Toast(context: Any? = null, string: String)
-
 expect val PlatformHttpEngine: HttpClient
+
+expect fun createToast(context: Any? = null, string: String)

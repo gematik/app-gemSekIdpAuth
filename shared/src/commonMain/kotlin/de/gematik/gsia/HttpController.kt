@@ -18,11 +18,13 @@
 package de.gematik.gsia
 
 import de.gematik.gsia.Constants.debug
-import io.ktor.client.HttpClient
+import de.gematik.gsia.data.GemSekIdpForbidden
+import de.gematik.gsia.data.GemSekIdpUnexpectedStatusCode
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.URLBuilder
 import io.ktor.http.Url
 
@@ -41,14 +43,6 @@ class HttpController(private val x_auth: String) {
         return out
     }
 
-    /**
-     * sends Authorization Request to sektoraler IDP (GSI). (see App-App Flow 6)
-     * @param redirectUrl Url to the sektoraler IDP
-     * @param requestUri Identifier for sektoraler IDP to map our authorization request to the first
-     * one initialized by the Anwendungsfrontend (Callee App)
-     * @param userId userId is optional because the userId is constant for GSI
-     * @return redirect to DiGA containing AUTH_CODE
-     */
     suspend fun authorizationRequestGetClaims(redirectUrl: String, requestUri: String): List<String> {
 
         val url = Url("$redirectUrl?device_type=android&request_uri=$requestUri")  // get claims
@@ -61,6 +55,12 @@ class HttpController(private val x_auth: String) {
             println("Response Body: ${response.bodyAsText()}")
             println("Response Header: ${response.headers.entries()}")
             println("Response: $response")
+        }
+
+        when (response.status) {
+            HttpStatusCode.OK -> Unit
+            HttpStatusCode.Forbidden -> throw GemSekIdpForbidden()
+            else -> throw GemSekIdpUnexpectedStatusCode(status = response.status.value, message = response.bodyAsText())
         }
 
         var claims: String = response.bodyAsText().dropWhile { it != '[' }
@@ -90,6 +90,12 @@ class HttpController(private val x_auth: String) {
             println("Response Body: ${response.bodyAsText()}")
             println("Response Header: ${response.headers.entries()}")
             println("Response: $response")
+        }
+
+        when (response.status) {
+            HttpStatusCode.Found -> Unit
+            HttpStatusCode.Forbidden -> throw GemSekIdpForbidden()
+            else -> throw GemSekIdpUnexpectedStatusCode(status = response.status.value, message = response.bodyAsText())
         }
 
         val redirect = URLBuilder(response.headers["Location"] ?: "").build()

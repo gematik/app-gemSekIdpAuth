@@ -17,11 +17,8 @@
 
 package de.gematik.gsia
 
-import android.app.Activity
 import android.content.Context
-import android.content.Context.MODE_PRIVATE
 import android.content.Intent
-import android.content.SharedPreferences
 import android.net.Uri
 import android.widget.Toast
 import androidx.core.content.ContextCompat.startActivity
@@ -38,7 +35,7 @@ actual fun executeDeeplink(context: Any?, uri: String) {
     }, null)
 }
 
-actual fun Toast(context: Any?, string: String) {
+actual fun createToast(context: Any?, string: String) {
     Toast.makeText(context as Context, string, Toast.LENGTH_SHORT).show()
 }
 
