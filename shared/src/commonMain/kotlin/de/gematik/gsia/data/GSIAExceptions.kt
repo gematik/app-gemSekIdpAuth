@@ -1,5 +1,5 @@
 /*
- *  Copyright 2024 gematik GmbH
+ *  Copyright 2023 gematik GmbH
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,4 +17,5 @@
 
 package de.gematik.gsia.data
 
-data class StateData(var kvnr: String, var claims: MutableMap<String, Boolean>)
+class GemSekIdpForbidden(message: String? = null, throwable: Throwable? = null): Exception(message, throwable)
+class GemSekIdpUnexpectedStatusCode(val status: Int, message: String? = null, throwable: Throwable? = null): Exception(message, throwable)

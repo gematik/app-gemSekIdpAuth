@@ -1,3 +1,13 @@
+# Release 2.1.18
+- trim X-Auth Header when set
+
+# Release 2.1.17
+- improve UI
+- save kvnr persistently in shared preferences
+- error handling now includes Toasts
+- stricter exception handling for http requests
+- gesundheitsID Icon now in GSIA
+
 # Release 2.1.16
 - add iOS support
 
