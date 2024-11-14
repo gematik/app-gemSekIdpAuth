@@ -62,9 +62,8 @@ fun DefaultScreen() {
 
 @Composable
 fun SetAuthKeyMax() {
-
     val viewModel: GSIAViewModel = viewModel { GSIAViewModel() }
-    var authkey by remember { mutableStateOf(TextFieldValue(viewModel.settings.value["auth_key", ""])) }
+    var authkey by remember { mutableStateOf(TextFieldValue(viewModel.settings.get("auth_key", ""))) }
 
     Row(
         modifier = Modifier
@@ -92,11 +91,7 @@ fun SetAuthKeyMax() {
             modifier = Modifier
                 .size(width = 125.dp, height = 120.dp),
             onClick = {
-                createToast(viewModel.context.value, "Set X-Auth Key. Change takes effect at next authentication")
-                viewModel.settings.value.set("auth_key", authkey.text)
-                if (debug) {
-                    println("Auth Key: " + viewModel.settings.value["auth_key", ""])
-                }
+                viewModel.setXAuthKeyInAuthentication(authkey.text, false)
             },
             fontSize = 17.sp,
         )

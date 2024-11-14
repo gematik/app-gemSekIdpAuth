@@ -17,44 +17,52 @@
 
 package de.gematik.gsia.data
 
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.russhwolf.settings.Settings
-import com.russhwolf.settings.get
-import com.russhwolf.settings.set
+import de.gematik.gsia.Constants.debug
 import de.gematik.gsia.HttpController
 import de.gematik.gsia.createToast
+import de.gematik.gsia.executeDeeplink
 import io.ktor.client.network.sockets.SocketTimeoutException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class EventClaims(val claims: List<String>)
 
 class GSIAViewModel : ViewModel() {
 
-    private val _settings = mutableStateOf<Settings>(Settings())
-    val settings = _settings
+    var settings by mutableStateOf<SharedPreference>(RusshwolfSharedPreferences())
+        private set
 
-    private val _kvnr = mutableStateOf<String>(settings.value.get<String>("kvnr") ?: "")
-    val kvnr = _kvnr
+    var kvnr by mutableStateOf(settings.get("kvnr") ?: "")
+        private set
 
-    private val _claims = mutableStateMapOf<String, Boolean>()
-    val claims = _claims
+    var claims = mutableStateMapOf<String, Boolean>()
+        private set
 
     private val _event: MutableSharedFlow<EventClaims> = MutableSharedFlow()
     val event: Flow<EventClaims> = _event
 
-    private val _context = mutableStateOf<Any?>(null)
-    val context = _context
+    private val _toastFlow: MutableSharedFlow<String> = MutableSharedFlow()
+    val toastFlow: Flow<String> = _toastFlow
 
-    private val _intent = mutableStateOf<GSIAIntentStep5>(GSIAIntentStep5(""))
-    val intent = _intent
+    private val _isLoading: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
 
-    var isGettingClaimsFromIdp = mutableStateOf(false)
+    var context by mutableStateOf<Any?>(null)
 
+    var intent by mutableStateOf<GSIAIntentStep5>(GSIAIntentStep5(""))
 
     init {
         viewModelScope.launch {
@@ -65,42 +73,51 @@ class GSIAViewModel : ViewModel() {
     }
 
     fun setKVNR(kvnr: String) {
-        _kvnr.value = kvnr
-        settings.value.set("kvnr", kvnr)
+        settings.set("kvnr", kvnr)
+        this.kvnr = kvnr
+        CoroutineScope(Dispatchers.IO).launch {
+            _toastFlow.emit("KVNR changed!")
+        }
     }
 
     fun setSelectedClaims(selectedClaims: Map<String, Boolean>) {
         selectedClaims.forEach { (k, v) ->
-            _claims[k] = v
+            claims[k] = v
         }
     }
 
-    fun setClaim(claim: String, state: Boolean) {
-        _claims[claim] = state
+    fun setIntent(intent: String) {
+        try {
+            this.intent = GSIAIntentStep5(intent)
+        } catch (e: Exception) {
+            println("incorrect intent")
+            println(intent)
+            CoroutineScope(Dispatchers.IO).launch {
+                _toastFlow.emit(
+                    e.message ?: "unspecified exception raised! See logs for further information"
+                )
+            }
+        }
+
+        if (this.intent.user_id.isNotEmpty())
+            setKVNR(this.intent.user_id)
+        else
+            setKVNR("X123456784")
     }
 
-    fun setContext(context: Any?) {
-        _context.value = context
-    }
-
-    fun setIntent(intent: GSIAIntentStep5) {
-        _intent.value = intent
-    }
-
-    fun resetClaims() {
-        _claims.clear()
+    fun toggleClaim(claim: String) {
+        claims[claim] = claims[claim]!!.not()
     }
 
     fun viewmodelGetClaims() {
 
         viewModelScope.launch {
+            _isLoading.update { true }
 
             try {
-                isGettingClaimsFromIdp.value = true
-
-                val claims = HttpController(settings.value["auth_key", ""]).authorizationRequestGetClaims(
-                    intent.value.getLocation(),
-                    intent.value.getRequest_uri(),
+                val claims = HttpController(settings.get("auth_key", "")).authorizationRequestGetClaims(
+                    intent.location,
+                    intent.request_uri,
                 ).associateWith { true }.toMutableMap()
 
                 _event.emit(EventClaims(claims.keys.toList()))
@@ -108,24 +125,68 @@ class GSIAViewModel : ViewModel() {
                 println("App-App-Flow Nr 6a RX: (${claims.size} Claims received)")
 
             } catch (e: SocketTimeoutException) {
-                createToast(context.value, "Connection timeout. Check your Internet Connection.")
+                _toastFlow.emit("Connection timeout. Check your Internet Connection.")
                 println("Can't connect to gemSekIdp. Can't retrieve claims. Check your Internet Connection.")
             } catch (e: GemSekIdpForbidden) {
-                createToast(context.value, "Http Code: 302. Check your X-Auth Key.")
+                _toastFlow.emit("Http Code: 302. Check your X-Auth Key.")
                 println("Can't get Claims from gemSekIdp due to wrong X-Auth Key. Please enter correct X-Auth Key in GSIA. In Case you haven't got one, contact gematik.")
             } catch (e: GemSekIdpUnexpectedStatusCode) {
-                createToast(context.value, "Unexpected HTTP Response Code: ${e.status}")
+                _toastFlow.emit("Unexpected HTTP Response Code: ${e.status}")
                 println("gemSekIdp responded with an unexpected HTTP Code: ${e.status}, ${e.message}")
             } catch (e: Exception) {
-                println("!Unexpected Exception occurred: ${e.message}")
-                println(e.cause)
-                createToast(
-                    context.value,
-                    "Unexpected Error. Look at logs to get further information."
-                )
+                println("!Unexpected Exception occurred: ${e.message}\n${e.cause}")
+                _toastFlow.emit("Unexpected Error. Look at logs to get further information.")
             } finally {
-                isGettingClaimsFromIdp.value = false
+                _isLoading.emit(false)
             }
         }
+    }
+
+    fun acceptAuthentication() {
+        CoroutineScope(Dispatchers.IO).launch {
+            if (settings.get("auth_key").isNullOrEmpty())
+                _toastFlow.emit("You need to set X-Auth Key!")
+
+            try {
+                val response = HttpController(settings.get("auth_key", "")).authorizationRequestSendClaims(
+                    intent.location, // redirectUrl,
+                    intent.request_uri, // requestUri,
+                    kvnr,
+                    claims.filter { it.value }.map { it.key }
+                )
+
+                println("used kvnr: ${kvnr}")
+                println("App-App-Flow Nr 8 TX: $response")
+                executeDeeplink(context, response)
+            } catch (e: Exception) {
+                createToast(context, e.message ?: "Claims konnten nicht abgerufen werden!")
+            }
+        }
+    }
+
+    fun declineAuthentication() {
+        CoroutineScope(Dispatchers.IO).launch {
+            _toastFlow.emit("Decline Button has no function")
+        }
+    }
+
+    fun setXAuthKeyInAuthentication(authKey: String, inAuthentication: Boolean) {
+        CoroutineScope(Dispatchers.IO).launch {
+            _toastFlow.emit(
+                if (inAuthentication)
+                    "Update X-Auth Key! Changes apply immediately"
+                else
+                    "Update X-Auth Key! Change takes effect at next authentication"
+            )
+        }
+
+        settings.set("auth_key", authKey)
+
+        if (debug) {
+            println("Auth Key: " + settings.get("auth_key"))
+        }
+
+        if (inAuthentication && claims.isEmpty())
+            viewmodelGetClaims()
     }
 }

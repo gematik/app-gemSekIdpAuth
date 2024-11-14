@@ -40,8 +40,8 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -55,30 +55,30 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.russhwolf.settings.get
-import com.russhwolf.settings.set
 import de.gematik.gsia.Constants.debug
-import de.gematik.gsia.HttpController
 import de.gematik.gsia.createToast
 import de.gematik.gsia.data.GSIAIntentStep5
 import de.gematik.gsia.data.GSIAViewModel
-import de.gematik.gsia.executeDeeplink
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 
 
 @Composable
 fun AuthenticationScreen() {
-
     val viewModel: GSIAViewModel = viewModel { GSIAViewModel() }
 
     if (debug) {
         println("Intent valid")
-        println("${viewModel.intent.value}")
+        println("${viewModel.intent}")
     }
 
     if (viewModel.claims.isEmpty()) {
-        println("App-App-Flow Nr 5 RX: ${viewModel.intent.value}")
-        viewModel.viewmodelGetClaims()
+        println("App-App-Flow Nr 5 RX: ${viewModel.intent}")
+        CoroutineScope(Dispatchers.IO).launch {
+            viewModel.viewmodelGetClaims()
+        }
     }
 
 
@@ -91,7 +91,7 @@ fun AuthenticationScreen() {
         Column(
             modifier = Modifier.height(100.dp)
         ) {
-            RequestInfo(viewModel.intent.value)
+            RequestInfo(viewModel.intent)
         }
 
         ListClaims(modifier = Modifier.fillMaxHeight().weight(1f))
@@ -102,7 +102,6 @@ fun AuthenticationScreen() {
         ){
             SetAuthKey()
             TextFieldKVNR()
-
             BtnAuthentication()
         }
     }
@@ -124,17 +123,15 @@ private fun RequestInfo(intent: GSIAIntentStep5) {
             fontFamily = FontFamily.SansSerif,
             fontSize = 18.sp
         )
-        Row(
-
-        ) {
+        Row {
             Column {
                 Text("sekIDP")
                 Text("RP")
             }
             Spacer(modifier = Modifier.width(10.dp))
             Column {
-                Text(intent.getLocation(), maxLines = 1)
-                Text(intent.getClient_id(), maxLines = 1)
+                Text(intent.location, maxLines = 1)
+                Text(intent.client_id, maxLines = 1)
             }
         }
     }
@@ -143,11 +140,8 @@ private fun RequestInfo(intent: GSIAIntentStep5) {
 @Composable
 private fun ListClaims(modifier: Modifier) {
     val viewModel: GSIAViewModel = viewModel { GSIAViewModel() }
-    val selectedClaims = remember { mutableStateMapOf<String, Boolean>() }
-
-    viewModel.claims.forEach { (k, v) ->
-        selectedClaims[k] = v
-    }
+    val claims by remember { mutableStateOf(viewModel.claims.keys) }
+    val isLoading by viewModel.isLoading.collectAsState(false)
 
     Column(
         modifier = modifier.then(Modifier.verticalScroll(rememberScrollState())),
@@ -155,18 +149,17 @@ private fun ListClaims(modifier: Modifier) {
     ) {
         Text("available Claims", fontWeight = FontWeight.Bold, fontSize = 20.sp)
 
-        if (viewModel.isGettingClaimsFromIdp.value) {
+        if (isLoading) {
             Spacer(Modifier.height(40.dp))
             CircularProgressIndicator()
         } else {
-
             Column {
-                if (viewModel.claims.size < 2)
+                if (viewModel.claims.isEmpty())
                     Text(
                         modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp),
                         text = "Empty list of claims might be caused by empty/wrong X-Auth Key"
                     )
-                selectedClaims.forEach { (claim) ->
+                for (claim in claims) {
                     RequestedClaimCard(claim)
                 }
             }
@@ -176,9 +169,8 @@ private fun ListClaims(modifier: Modifier) {
 
 @Composable
 fun SetAuthKey() {
-
     val viewModel: GSIAViewModel = viewModel { GSIAViewModel() }
-    var authkey by remember { mutableStateOf(TextFieldValue(viewModel.settings.value["auth_key", ""])) }
+    var authkey by remember { mutableStateOf(TextFieldValue(viewModel.settings.get("auth_key", ""))) }
 
     Row(
         modifier = Modifier
@@ -206,13 +198,7 @@ fun SetAuthKey() {
             modifier = Modifier
                 .size(width = 125.dp, height = 52.dp),
             onClick = {
-                createToast(viewModel.context.value, "Update X-Auth Key! Changes apply immediately")
-                viewModel.settings.value.set("auth_key", authkey.text.trim())
-                if (debug) {
-                    println("Auth Key: " + viewModel.settings.value["auth_key", ""])
-                }
-                if (viewModel.claims.isEmpty())
-                    viewModel.viewmodelGetClaims()
+                viewModel.setXAuthKeyInAuthentication(authkey.text.trim(), true)
             },
             fontSize = 16.sp,
         )
@@ -224,7 +210,7 @@ private fun TextFieldKVNR() {
     val viewModel: GSIAViewModel = viewModel { GSIAViewModel() }
 
     OutlinedTextField(
-        value = viewModel.kvnr.value,
+        value = viewModel.kvnr,
         onValueChange = {
             viewModel.setKVNR(it)
         },
@@ -240,9 +226,7 @@ private fun TextFieldKVNR() {
 fun BtnAuthentication() {
     val viewModel: GSIAViewModel = viewModel { GSIAViewModel() }
 
-    val scope = rememberCoroutineScope()
-
-    return Column(
+    Column(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Row(
@@ -253,30 +237,10 @@ fun BtnAuthentication() {
                 .fillMaxWidth()
         ) {
             FilledButton("Accept", onClick = {
-
-                if (viewModel.settings.value["auth_key", ""] == "") {
-                    createToast(viewModel.context.value, "You need to set X-Auth Key!")
-                } else {
-                    scope.launch {
-                        try {
-                            val response = HttpController(viewModel.settings.value["auth_key", ""]).authorizationRequestSendClaims(
-                                viewModel.intent.value.getLocation(), // redirectUrl,
-                                viewModel.intent.value.getRequest_uri(), // requestUri,
-                                viewModel.kvnr.value,
-                                viewModel.claims.filter { it.value }.map { it.key }
-                            )
-
-                            println("used kvnr: ${viewModel.kvnr.value}")
-                            println("App-App-Flow Nr 8 TX: $response")
-                            executeDeeplink(viewModel.context.value, response)
-                        } catch (e: Exception) {
-                            createToast(viewModel.context.value, e.message ?: "Claims konnten nicht abgerufen werden!")
-                        }
-                    }
-                }
+                viewModel.acceptAuthentication()
             })
             FilledButton("Decline", onClick = {
-                // Behaviour for declining authentication
+                viewModel.declineAuthentication()
             })
         }
     }
@@ -291,12 +255,11 @@ fun RequestedClaimCard(claim: String) {
         modifier = Modifier
             .fillMaxWidth(0.95f)
             .padding(10.dp)
-            .height(70.dp)
-        ,
+            .height(70.dp),
         shape = RoundedCornerShape(10.dp),
         elevation = 5.dp,
         onClick = {
-            viewModel.setClaim(claim ,!(viewModel.claims[claim]!!))
+            viewModel.toggleClaim(claim)
         },
         content = {
             Row(
@@ -309,7 +272,7 @@ fun RequestedClaimCard(claim: String) {
                 Checkbox(
                     checked = viewModel.claims[claim]!!,
                     onCheckedChange = {
-                        viewModel.setClaim(claim ,!(viewModel.claims[claim]!!))
+                        viewModel.toggleClaim(claim)
                     }
                 )
             }

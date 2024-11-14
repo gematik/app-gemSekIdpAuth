@@ -18,39 +18,32 @@
 package de.gematik.gsia
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.gematik.gsia.data.GSIAIntentStep5
 import de.gematik.gsia.data.GSIAViewModel
 import de.gematik.gsia.presentation.AuthenticationScreen
 import de.gematik.gsia.presentation.DefaultScreen
+import kotlinx.coroutines.launch
 
 @Composable
 fun App(context: Any?, intent: String) {
 
     val viewModel : GSIAViewModel = viewModel { GSIAViewModel() }
-    viewModel.setContext(context)
+    val scope = rememberCoroutineScope()
 
-    try {
+    viewModel.context = context
+    viewModel.setIntent(intent)
 
-        val gsiaIntent: GSIAIntentStep5 = GSIAIntentStep5(intent)
-        viewModel.setIntent(GSIAIntentStep5(intent))
-
-        if (intent.contains("user_id"))
-            viewModel.setKVNR(gsiaIntent.getUser_id())
-        else
-            viewModel.setKVNR("X123456784")
-
-    } catch (e: Exception) {
-        println("incorrect intent")
-        println(intent)
-        createToast(
-            viewModel.context.value,
-            e.message ?: "unspecified exception raised! See logs for further information"
-        )
-    } finally {
-        if (viewModel.intent.value.string.isEmpty()) {
-            DefaultScreen()
-        } else
-            AuthenticationScreen()
+    // Display any toasts coming from viewmodel throughout the whole app
+    scope.launch {
+        viewModel.toastFlow.collect { message ->
+            createToast(viewModel.context, message)
+        }
     }
+
+    if (intent.isEmpty())
+        DefaultScreen()
+    else
+        AuthenticationScreen()
 }
