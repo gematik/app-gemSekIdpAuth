@@ -22,6 +22,10 @@ import io.ktor.http.Url
 class GSIAIntentStep5(val string: String) {
 
     val intent: Url = Url(string)
+    val location: String = intent.toString().split("?").first()
+    val user_id: String = intent.parameters["user_id"] ?: ""
+    val client_id: String = intent.parameters["client_id"] ?: ""
+    val request_uri: String = intent.parameters["request_uri"] ?: ""
 
     init {
         println("Intent: $intent")
@@ -30,22 +34,4 @@ class GSIAIntentStep5(val string: String) {
             require(intent.parameters.contains("client_id")) { "No client_id in Intent found!" } // TODO in which cases is there a user_id instead of client_id?
         }
     }
-
-    fun getLocation(): String {
-        return intent.toString().split("?")[0]
-    }
-
-    fun getClient_id(): String {
-        return intent.parameters["client_id"]!!
-    }
-
-    fun getUser_id(): String {
-        return intent.parameters["user_id"]!!
-    }
-
-    fun getRequest_uri(): String {
-        return intent.parameters["request_uri"]!!
-    }
-
-    fun getUrl(): Url = intent
 }

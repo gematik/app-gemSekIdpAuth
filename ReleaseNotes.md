@@ -1,3 +1,6 @@
+# Release 2.1.19
+- improved UI and Error Handling
+
 # Release 2.1.18
 - trim X-Auth Header when set
 

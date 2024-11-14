@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colors.background
                 ) {
-                    App(LocalContext.current, iData.toString())
+                    App(LocalContext.current, (iData ?: "").toString())
                 }
             }
         }
