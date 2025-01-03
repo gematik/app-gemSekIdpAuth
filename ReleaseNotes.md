@@ -1,5 +1,6 @@
 # Release 2.1.19
 - improved UI and Error Handling
+- bug fixed: saved kvnr was not loaded correctly
 
 # Release 2.1.18
 - trim X-Auth Header when set
