@@ -25,7 +25,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import de.gematik.gsia.Constants.debug
 import de.gematik.gsia.HttpController
-import de.gematik.gsia.createToast
 import de.gematik.gsia.executeDeeplink
 import io.ktor.client.network.sockets.SocketTimeoutException
 import kotlinx.coroutines.CoroutineScope
@@ -75,9 +74,6 @@ class GSIAViewModel : ViewModel() {
     fun setKVNR(kvnr: String) {
         settings.set("kvnr", kvnr)
         this.kvnr = kvnr
-        CoroutineScope(Dispatchers.IO).launch {
-            _toastFlow.emit("KVNR changed!")
-        }
     }
 
     fun setSelectedClaims(selectedClaims: Map<String, Boolean>) {
@@ -101,8 +97,6 @@ class GSIAViewModel : ViewModel() {
 
         if (this.intent.user_id.isNotEmpty())
             setKVNR(this.intent.user_id)
-        else
-            setKVNR("X123456784")
     }
 
     fun toggleClaim(claim: String) {
@@ -159,7 +153,9 @@ class GSIAViewModel : ViewModel() {
                 println("App-App-Flow Nr 8 TX: $response")
                 executeDeeplink(context, response)
             } catch (e: Exception) {
-                createToast(context, e.message ?: "Claims konnten nicht abgerufen werden!")
+                CoroutineScope(Dispatchers.IO).launch {
+                    _toastFlow.emit(e.message ?: "Claims konnten nicht abgerufen werden!")
+                }
             }
         }
     }
