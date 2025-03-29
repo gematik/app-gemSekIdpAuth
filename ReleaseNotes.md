@@ -1,3 +1,9 @@
+# Release 2.1.22
+- clean up repository
+
+# Release 2.1.21
+- add binary of GSIA from appcenter to GitHub
+
 # Release 2.1.19
 - improved UI and Error Handling
 - bug fixed: saved kvnr was not loaded correctly

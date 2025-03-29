@@ -1,7 +1,8 @@
 # GSIA Multiplatform App
 
-This is the authenticator module for gematik sekoraler idp.  
+This is the authenticator module for gematik sekoraler idp.
 
-In ./emulator/ we provide a scripts to create a plain android emulator with GSIA preinstalled on it.  
-In addition within configureEmulator.sh you can enter location of your DiGA-apk which then will be 
-installed also. Thus you can test the App-App-Flow manually on the emulator.
+This app can be used to test login with GesundheitsID.
+
+Application for android is found in this repository, for iOS it's located in TestFlight.
+Note that building GSIA for yourself will result in a different fingerprint due to different signing keys, thus only the provided application works as intended.

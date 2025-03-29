@@ -1,2 +1,0 @@
-project("gsia_iOS/gsia_iOS.xcodeproj")
-scheme("gsia_iOS")
