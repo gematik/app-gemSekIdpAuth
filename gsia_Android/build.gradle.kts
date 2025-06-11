@@ -11,8 +11,8 @@ android {
         applicationId = "de.gematik.gsia.android"
         minSdk = 28
         targetSdk = 34
-        versionCode = 20119
-        versionName = "2.1.19"
+        versionCode = 20124
+        versionName = "2.1.24"
         signingConfig = signingConfigs.getByName("debug")
     }
     buildFeatures {
