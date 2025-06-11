@@ -1,3 +1,6 @@
+# Release 2.1.24
+- bugfix: manual start of GSIA does not longer displays "loading..."
+
 # Release 2.1.22
 - clean up repository
 
