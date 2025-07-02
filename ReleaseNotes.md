@@ -1,3 +1,6 @@
+# Release 2.1.25
+- bugfix (ios): after the first authentication the next ones did not inject the new request_uri into GSIA
+
 # Release 2.1.24
 - bugfix: manual start of GSIA does not longer displays "loading..."
 
