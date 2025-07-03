@@ -44,9 +44,9 @@ actual fun executeDeeplink(context: Any?, uri: String) {
             NSURL.URLWithString(uri)!!)
     ) {
         UIApplication.sharedApplication.openURL(
-            NSURL.URLWithString(
-                uri
-            )!!
+            url = NSURL.URLWithString(uri)!!,
+            options = emptyMap<Any?, Any>(),
+            completionHandler = null
         )
     }
 }

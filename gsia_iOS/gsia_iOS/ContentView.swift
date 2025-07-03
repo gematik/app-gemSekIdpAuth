@@ -27,7 +27,9 @@ struct ContentView: View {
 	var body: some View {
         VStack {
             if let universalLink = universalLink {
+                // id is used to refresh the view and trigger a new session
                 ComposeView(universalLink: universalLink)
+                    .id(universalLink.absoluteString)
             } else {
                 ComposeView(universalLink: nil)
             }
