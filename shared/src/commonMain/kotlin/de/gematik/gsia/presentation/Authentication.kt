@@ -47,7 +47,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,7 +58,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.gematik.gsia.Constants.debug
-import de.gematik.gsia.createToast
 import de.gematik.gsia.data.GSIAIntentStep5
 import de.gematik.gsia.data.GSIAViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -209,7 +207,7 @@ fun SetAuthKey() {
 }
 
 @Composable
-private fun TextFieldKVNR() {
+fun TextFieldKVNR() {
     val viewModel: GSIAViewModel = viewModel { GSIAViewModel() }
 
     OutlinedTextField(
