@@ -42,23 +42,28 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.russhwolf.settings.get
-import com.russhwolf.settings.set
-import de.gematik.gsia.Constants.debug
-import de.gematik.gsia.createToast
 import de.gematik.gsia.data.GSIAViewModel
 
 @Composable
 fun DefaultScreen() {
     Column(
-        modifier = Modifier.padding(20.dp),
+        verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("GSIA wurde nicht durch korrekten Deeplink gestartet. Authentisierung nicht möglich!")
-        Spacer(Modifier.height(20.dp))
-        Text("Hier kann der X-Auth Key für folgende Authentisierungen gesetzt werden")
+        Column(
+            modifier = Modifier.padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("GSIA wurde nicht durch korrekten Deeplink gestartet. Authentisierung nicht möglich!")
+            Spacer(Modifier.height(20.dp))
+            Text("Hier kann der X-Auth Key für folgende Authentisierungen gesetzt werden")
 
-        SetAuthKeyMax()
+            SetAuthKeyMax()
+            Spacer(Modifier.height(20.dp))
+            TextFieldKVNR()
+        }
+
+        Text("v 2.1.26", Modifier.padding(5.dp))
     }
 }
 

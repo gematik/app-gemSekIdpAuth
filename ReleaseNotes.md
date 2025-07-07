@@ -1,3 +1,7 @@
+# Release 2.1.26
+- kvnr can be changed on manual start screen
+- version number is now displayed on manual start screen
+
 # Release 2.1.25
 - bugfix (ios): after the first authentication the next ones did not inject the new request_uri into GSIA
 
