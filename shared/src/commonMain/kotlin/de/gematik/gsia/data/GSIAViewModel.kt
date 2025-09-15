@@ -29,6 +29,8 @@ import androidx.lifecycle.viewModelScope
 import de.gematik.gsia.Constants.debug
 import de.gematik.gsia.HttpController
 import de.gematik.gsia.executeDeeplink
+import de.gematik.gsia.ui.DialogMessage
+import de.gematik.gsia.ui.MessageType
 import io.ktor.client.network.sockets.SocketTimeoutException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,11 +55,13 @@ class GSIAViewModel : ViewModel() {
     var claims = mutableStateMapOf<String, Boolean>()
         private set
 
+    var autoAuthenticate = mutableStateOf(false)
+
     private val _event: MutableSharedFlow<EventClaims> = MutableSharedFlow()
     val event: Flow<EventClaims> = _event
 
-    private val _toastFlow: MutableSharedFlow<String> = MutableSharedFlow()
-    val toastFlow: Flow<String> = _toastFlow
+    private val _errorHandlerFlow: MutableSharedFlow<DialogMessage> = MutableSharedFlow()
+    val errorHandlerFlow: Flow<DialogMessage> = _errorHandlerFlow
 
     private val _isLoading: MutableStateFlow<Boolean> = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -70,6 +74,16 @@ class GSIAViewModel : ViewModel() {
         viewModelScope.launch {
             event.collect { event ->
                 setSelectedClaims(event.claims.associateWith { true }.toMutableMap())
+            }
+        }
+
+        if (settings.get("auto-authenticate") == null) {
+            settings.set("auto-authenticate", "false")
+        }
+        if (settings.get("auto-authenticate") != null) {
+            when (settings.get("auto-authenticate")) {
+                "true" -> autoAuthenticate.value = true
+                "false" -> autoAuthenticate.value = false
             }
         }
     }
@@ -92,14 +106,22 @@ class GSIAViewModel : ViewModel() {
             println("incorrect intent")
             println(intent)
             CoroutineScope(Dispatchers.IO).launch {
-                _toastFlow.emit(
-                    e.message ?: "unspecified exception raised! See logs for further information"
+                _errorHandlerFlow.emit(
+                    DialogMessage(
+                    e.message ?: "unspecified exception raised! See logs for further information",
+                        MessageType.ERROR
+                    )
                 )
             }
         }
 
         if (this.intent.user_id.isNotEmpty())
             setKVNR(this.intent.user_id)
+    }
+
+    fun setAutoAuthenticate(boolean: Boolean) {
+        autoAuthenticate.value = boolean
+        settings.set("auto-authenticate", boolean.toString())
     }
 
     fun toggleClaim(claim: String) {
@@ -121,28 +143,31 @@ class GSIAViewModel : ViewModel() {
 
                 println("App-App-Flow Nr 6a RX: (${claims.size} Claims received)")
 
-            } catch (e: SocketTimeoutException) {
-                _toastFlow.emit("Connection timeout. Check your Internet Connection.")
+            } catch (_: SocketTimeoutException) {
+                _errorHandlerFlow.emit(DialogMessage("Connection timeout. Check your Internet Connection.", MessageType.ERROR))
                 println("Can't connect to gemSekIdp. Can't retrieve claims. Check your Internet Connection.")
-            } catch (e: GemSekIdpForbidden) {
-                _toastFlow.emit("Http Code: 302. Check your X-Auth Key.")
+            } catch (_: GemSekIdpForbidden) {
+                _errorHandlerFlow.emit(DialogMessage("Http Code: 302. Check your X-Auth Key.", MessageType.ERROR))
                 println("Can't get Claims from gemSekIdp due to wrong X-Auth Key. Please enter correct X-Auth Key in GSIA. In Case you haven't got one, contact gematik.")
             } catch (e: GemSekIdpUnexpectedStatusCode) {
-                _toastFlow.emit("Unexpected HTTP Response Code: ${e.status}")
+                _errorHandlerFlow.emit(DialogMessage("Unexpected HTTP Response Code: ${e.status}", MessageType.ERROR))
                 println("gemSekIdp responded with an unexpected HTTP Code: ${e.status}, ${e.message}")
             } catch (e: Exception) {
                 println("!Unexpected Exception occurred: ${e.message}\n${e.cause}")
-                _toastFlow.emit("Unexpected Error. Look at logs to get further information.")
+                _errorHandlerFlow.emit(DialogMessage("Unexpected Error. Look at logs to get further information.", MessageType.ERROR))
             } finally {
                 _isLoading.emit(false)
             }
+
+            if (autoAuthenticate.value)
+                acceptAuthentication()
         }
     }
 
     fun acceptAuthentication() {
         CoroutineScope(Dispatchers.IO).launch {
             if (settings.get("auth_key").isNullOrEmpty())
-                _toastFlow.emit("You need to set X-Auth Key!")
+                _errorHandlerFlow.emit(DialogMessage("You need to set X-Auth Key!"))
 
             try {
                 val response = HttpController(settings.get("auth_key", "")).authorizationRequestSendClaims(
@@ -155,27 +180,36 @@ class GSIAViewModel : ViewModel() {
                 println("used kvnr: ${kvnr}")
                 println("App-App-Flow Nr 8 TX: $response")
                 executeDeeplink(context, response)
-            } catch (e: Exception) {
-                CoroutineScope(Dispatchers.IO).launch {
-                    _toastFlow.emit(e.message ?: "Claims konnten nicht abgerufen werden!")
-                }
+            } catch (_: GemSekIdpTimeout) {
+                _errorHandlerFlow.emit(DialogMessage("Connection timeout. Check your Internet Connection.", MessageType.ERROR))
+            }  catch (e: Exception) {
+                println("!Unexpected Exception occurred: ${e.message}\n${e.cause}")
+                _errorHandlerFlow.emit(
+                    DialogMessage(
+                        "Unexpected Error. Look at logs to get further information.",
+                        MessageType.ERROR
+                    )
+                )
             }
         }
     }
 
     fun declineAuthentication() {
         CoroutineScope(Dispatchers.IO).launch {
-            _toastFlow.emit("Decline Button has no function")
+            _errorHandlerFlow.emit(DialogMessage("Decline Button has no function", MessageType.INFORMATION))
         }
     }
 
     fun setXAuthKeyInAuthentication(authKey: String, inAuthentication: Boolean) {
         CoroutineScope(Dispatchers.IO).launch {
-            _toastFlow.emit(
-                if (inAuthentication)
-                    "Update X-Auth Key! Changes apply immediately"
-                else
-                    "Update X-Auth Key! Change takes effect at next authentication"
+            _errorHandlerFlow.emit(
+                DialogMessage(
+                    if (inAuthentication)
+                        "Update X-Auth Key! Changes apply immediately"
+                    else
+                        "Update X-Auth Key! Change takes effect at next authentication",
+                    MessageType.INFORMATION
+                )
             )
         }
 

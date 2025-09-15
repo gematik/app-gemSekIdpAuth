@@ -1,0 +1,2 @@
+- auto authenticate mode (automatically triggers 'accept' button during authentication)
+- replaced toasts by dialogs

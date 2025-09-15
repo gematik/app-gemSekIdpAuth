@@ -41,6 +41,7 @@ import androidx.compose.material.Checkbox
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -101,6 +102,7 @@ fun AuthenticationScreen() {
             modifier = Modifier.height(320.dp),
             verticalArrangement = Arrangement.Bottom
         ){
+            SetAutoAuthenticate()
             SetAuthKey()
             TextFieldKVNR()
             BtnAuthentication()
@@ -169,6 +171,26 @@ private fun ListClaims(modifier: Modifier) {
 }
 
 @Composable
+fun SetAutoAuthenticate() {
+    val viewModel: GSIAViewModel = viewModel { GSIAViewModel() }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text("Auto Authenticate")
+        Switch(
+            modifier = Modifier.padding(start = 5.dp, end = 20.dp),
+            checked = viewModel.autoAuthenticate.value,
+            onCheckedChange = { it ->
+                viewModel.setAutoAuthenticate(it)
+            }
+        )
+    }
+}
+
+@Composable
 fun SetAuthKey() {
     val viewModel: GSIAViewModel = viewModel { GSIAViewModel() }
     var authkey by remember { mutableStateOf(TextFieldValue(viewModel.settings.get("auth_key", ""))) }
@@ -219,7 +241,8 @@ fun TextFieldKVNR() {
         modifier = Modifier
             .padding(20.dp)
             .fillMaxWidth()
-            .height(60.dp)
+            .height(60.dp),
+        singleLine = true
     )
 }
 
@@ -239,10 +262,14 @@ fun BtnAuthentication() {
         ) {
             FilledButton("Accept", onClick = {
                 viewModel.acceptAuthentication()
-            })
+            },
+                modifier = Modifier.height(50.dp).fillMaxWidth().padding(horizontal = 20.dp)
+            )
+            /*
             FilledButton("Decline", onClick = {
                 viewModel.declineAuthentication()
             })
+             */
         }
     }
 }
