@@ -1,3 +1,7 @@
+# Release 2.1.27
+- auto authenticate mode (automatically triggers 'accept' button during authentication)
+- replaced toasts by dialogs
+
 # Release 2.1.26
 - kvnr can be changed on manual start screen
 - version number is now displayed on manual start screen

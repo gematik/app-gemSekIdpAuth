@@ -21,29 +21,21 @@
 package de.gematik.gsia
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import de.gematik.gsia.data.GSIAIntentStep5
 import de.gematik.gsia.data.GSIAViewModel
 import de.gematik.gsia.presentation.AuthenticationScreen
 import de.gematik.gsia.presentation.DefaultScreen
-import kotlinx.coroutines.launch
+import de.gematik.gsia.ui.ErrorHandler
 
 @Composable
 fun App(context: Any?, intent: String) {
 
     val viewModel : GSIAViewModel = viewModel { GSIAViewModel() }
-    val scope = rememberCoroutineScope()
 
     viewModel.context = context
     viewModel.setIntent(intent)
 
-    // Display any toasts coming from viewmodel throughout the whole app
-    scope.launch {
-        viewModel.toastFlow.collect { message ->
-            createToast(viewModel.context, message)
-        }
-    }
+    ErrorHandler()
 
     if (intent.isEmpty())
         DefaultScreen()

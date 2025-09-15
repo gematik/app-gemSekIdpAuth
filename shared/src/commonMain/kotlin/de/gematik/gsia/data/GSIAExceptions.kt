@@ -22,3 +22,4 @@ package de.gematik.gsia.data
 
 class GemSekIdpForbidden(message: String? = null, throwable: Throwable? = null): Exception(message, throwable)
 class GemSekIdpUnexpectedStatusCode(val status: Int, message: String? = null, throwable: Throwable? = null): Exception(message, throwable)
+class GemSekIdpTimeout(message: String? = null, throwable: Throwable? = null): Exception(message, throwable)

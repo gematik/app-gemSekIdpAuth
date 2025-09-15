@@ -30,5 +30,3 @@ import io.ktor.client.HttpClient
 expect fun executeDeeplink(context: Any? = null, uri: String)
 
 expect val PlatformHttpEngine: HttpClient
-
-expect fun createToast(context: Any? = null, string: String)
