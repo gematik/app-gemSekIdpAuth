@@ -61,9 +61,11 @@ fun DefaultScreen() {
             SetAuthKeyMax()
             Spacer(Modifier.height(20.dp))
             TextFieldKVNR()
+            Spacer(Modifier.height(10.dp))
+            SetAutoAuthenticate()
         }
 
-        Text("v 2.1.26", Modifier.padding(5.dp))
+        Text("v 2.1.27", Modifier.padding(5.dp))
     }
 }
 

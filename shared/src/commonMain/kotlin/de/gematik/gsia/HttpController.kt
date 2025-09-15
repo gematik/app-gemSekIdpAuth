@@ -22,7 +22,9 @@ package de.gematik.gsia
 
 import de.gematik.gsia.Constants.debug
 import de.gematik.gsia.data.GemSekIdpForbidden
+import de.gematik.gsia.data.GemSekIdpTimeout
 import de.gematik.gsia.data.GemSekIdpUnexpectedStatusCode
+import io.ktor.client.network.sockets.SocketTimeoutException
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.statement.HttpResponse
@@ -49,30 +51,35 @@ class HttpController(private val x_auth: String) {
     suspend fun authorizationRequestGetClaims(redirectUrl: String, requestUri: String): List<String> {
 
         val url = Url("$redirectUrl?device_type=android&request_uri=$requestUri")  // get claims
-        val response: HttpResponse = client.get(url) {
-            header("X-Authorization", x_auth)
+
+        try {
+            val response: HttpResponse = client.get(url) {
+                header("X-Authorization", x_auth)
+            }
+            println("App-App-Flow Nr 6 TX: $url")
+
+            if (debug) {
+                println("Response Body: ${response.bodyAsText()}")
+                println("Response Header: ${response.headers.entries()}")
+                println("Response: $response")
+            }
+
+            when (response.status) {
+                HttpStatusCode.OK -> Unit
+                HttpStatusCode.Forbidden -> throw GemSekIdpForbidden()
+                else -> throw GemSekIdpUnexpectedStatusCode(status = response.status.value, message = response.bodyAsText())
+            }
+
+            var claims: String = response.bodyAsText().dropWhile { it != '[' }
+            claims = claims.replace("[","")
+                .replace("]","")
+                .replace("}","")
+                .replace("\"","")
+
+            return claims.split(",")
+        } catch (_: SocketTimeoutException) {
+            throw GemSekIdpTimeout()
         }
-        println("App-App-Flow Nr 6 TX: $url")
-
-        if (debug) {
-            println("Response Body: ${response.bodyAsText()}")
-            println("Response Header: ${response.headers.entries()}")
-            println("Response: $response")
-        }
-
-        when (response.status) {
-            HttpStatusCode.OK -> Unit
-            HttpStatusCode.Forbidden -> throw GemSekIdpForbidden()
-            else -> throw GemSekIdpUnexpectedStatusCode(status = response.status.value, message = response.bodyAsText())
-        }
-
-        var claims: String = response.bodyAsText().dropWhile { it != '[' }
-        claims = claims.replace("[","")
-                       .replace("]","")
-                       .replace("}","")
-                       .replace("\"","")
-
-        return claims.split(",")
     }
 
     suspend fun authorizationRequestSendClaims(
@@ -84,30 +91,39 @@ class HttpController(private val x_auth: String) {
         println(claims)
 
         val url = Url("$redirectUrl?user_id=$userId&request_uri=$requestUri&selected_claims=${formatClaims(claims)}")
-        val response: HttpResponse = client.get(url) {
-            header("X-Authorization", x_auth)
+
+        try {
+            val response: HttpResponse = client.get(url) {
+                header("X-Authorization", x_auth)
+            }
+            println("App-App-Flow Nr 6b TX: $url")
+
+            if (debug) {
+                println("Response Body: ${response.bodyAsText()}")
+                println("Response Header: ${response.headers.entries()}")
+                println("Response: $response")
+            }
+
+            when (response.status) {
+                HttpStatusCode.Found -> Unit
+                HttpStatusCode.Forbidden -> throw GemSekIdpForbidden()
+                else -> {
+                    println("App-App Nr 6b RX: ${response.status.value}, ${response.bodyAsText()}")
+                    throw GemSekIdpUnexpectedStatusCode(status = response.status.value, message = response.bodyAsText())
+                }
+            }
+
+            val redirect = URLBuilder(response.headers["Location"] ?: "").build()
+
+            redirect.parameters["code"] ?: throw Exception("No AuthCode Recevied from gemSekIdp")
+            redirect.parameters["state"] ?: throw Exception("No State Recevied")
+
+            println("App-App-Flow Nr 7 RX: $response")
+
+            return redirect.toString()
+        } catch (_: SocketTimeoutException) {
+            throw GemSekIdpTimeout()
         }
-        println("App-App-Flow Nr 6b TX: $url")
 
-        if (debug) {
-            println("Response Body: ${response.bodyAsText()}")
-            println("Response Header: ${response.headers.entries()}")
-            println("Response: $response")
-        }
-
-        when (response.status) {
-            HttpStatusCode.Found -> Unit
-            HttpStatusCode.Forbidden -> throw GemSekIdpForbidden()
-            else -> throw GemSekIdpUnexpectedStatusCode(status = response.status.value, message = response.bodyAsText())
-        }
-
-        val redirect = URLBuilder(response.headers["Location"] ?: "").build()
-
-        redirect.parameters["code"] ?: throw Exception("No AuthCode Recevied from gemSekIdp")
-        redirect.parameters["state"] ?: throw Exception("No State Recevied")
-
-        println("App-App-Flow Nr 7 RX: $response")
-
-        return redirect.toString()
     }
 }

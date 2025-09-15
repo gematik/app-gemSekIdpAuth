@@ -22,24 +22,15 @@ package de.gematik.gsia
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import android.widget.Toast
 import androidx.core.content.ContextCompat.startActivity
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.painter.Painter
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.HttpClientEngine
-import okhttp3.internal.platform.Platform
+import androidx.core.net.toUri
 
 actual fun executeDeeplink(context: Any?, uri: String) {
     // startActivity(Intent(Intent.ACTION_VIEW))
     startActivity(context as Context, Intent(Intent.ACTION_VIEW).apply {
-        data = Uri.parse(uri)
+        data = uri.toUri()
     }, null)
-}
-
-actual fun createToast(context: Any?, string: String) {
-    Toast.makeText(context as Context, string, Toast.LENGTH_SHORT).show()
 }
 
 actual val PlatformHttpEngine = HttpClient() { followRedirects = false }
