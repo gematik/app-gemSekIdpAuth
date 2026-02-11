@@ -65,7 +65,7 @@ fun DefaultScreen() {
             SetAutoAuthenticate()
         }
 
-        Text("v 2.1.27", Modifier.padding(5.dp))
+        Text("v 2.1.29", Modifier.padding(5.dp))
     }
 }
 
