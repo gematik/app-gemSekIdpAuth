@@ -22,7 +22,9 @@ package de.gematik.gsia.presentation
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,10 +38,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.AlertDialog
 import androidx.compose.material.Card
 import androidx.compose.material.Checkbox
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Switch
 import androidx.compose.material.Text
@@ -83,7 +87,6 @@ fun AuthenticationScreen() {
         }
     }
 
-
     Column (
         verticalArrangement = Arrangement.SpaceBetween,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -99,12 +102,12 @@ fun AuthenticationScreen() {
         ListClaims(modifier = Modifier.fillMaxHeight().weight(1f))
 
         Column(
-            modifier = Modifier.height(320.dp),
+            modifier = Modifier.padding(20.dp).height(320.dp),
             verticalArrangement = Arrangement.Bottom
         ){
             SetAutoAuthenticate()
             SetAuthKey()
-            TextFieldKVNR()
+            BlockKVNR()
             BtnAuthentication()
         }
     }
@@ -175,7 +178,7 @@ fun SetAutoAuthenticate() {
     val viewModel: GSIAViewModel = viewModel { GSIAViewModel() }
 
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -196,9 +199,7 @@ fun SetAuthKey() {
     var authkey by remember { mutableStateOf(TextFieldValue(viewModel.settings.get("auth_key", ""))) }
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Bottom
     ) {
@@ -229,21 +230,62 @@ fun SetAuthKey() {
 }
 
 @Composable
-fun TextFieldKVNR() {
+fun BlockKVNR() {
     val viewModel: GSIAViewModel = viewModel { GSIAViewModel() }
+    var showRecentKVNR by remember { mutableStateOf(false) }
+    val recentKVNRs by viewModel.recentKVNRs.collectAsState()
 
-    OutlinedTextField(
-        value = viewModel.kvnr,
-        onValueChange = {
-            viewModel.setKVNR(it)
-        },
-        label = { Text(text = "KVNR") },
-        modifier = Modifier
-            .padding(20.dp)
-            .fillMaxWidth()
-            .height(60.dp),
-        singleLine = true
-    )
+    if (showRecentKVNR)
+        AlertDialog(
+            onDismissRequest = { showRecentKVNR = false },
+            title = {},
+            text = {
+                Column {
+                    println(recentKVNRs)
+                    recentKVNRs.forEach { text ->
+                        println("kvnr: $text")
+                        Card(
+                            modifier = Modifier.padding(8.dp).height(60.dp).width(240.dp).clickable() {
+                                viewModel.setKVNR(text)
+                                showRecentKVNR = false
+                            }
+                        ) {
+                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text(text = text, style = MaterialTheme.typography.h5)
+                            }
+                        }
+                    }
+                }
+            },
+            buttons = {}
+        )
+
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp)
+    ) {
+        OutlinedTextField(
+            value = viewModel.kvnr,
+            onValueChange = {
+                viewModel.setKVNR(it)
+            },
+            label = { Text(text = "KVNR") },
+            modifier = Modifier
+                .width(225.dp)
+                .height(60.dp),
+            singleLine = true
+        )
+        Spacer(Modifier.width(10.dp))
+        FilledButton(
+            "Previous KVNR",
+            modifier = Modifier
+                .padding(top = 8.dp).size(width = 125.dp, height = 52.dp),
+            onClick = {
+                showRecentKVNR = true
+            },
+            fontSize = 16.sp,
+        )
+    }
 }
 
 @Composable
@@ -257,13 +299,12 @@ fun BtnAuthentication() {
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.Bottom,
             modifier = Modifier
-                .padding(bottom = 20.dp)
                 .fillMaxWidth()
         ) {
             FilledButton("Accept", onClick = {
                 viewModel.acceptAuthentication()
             },
-                modifier = Modifier.height(50.dp).fillMaxWidth().padding(horizontal = 20.dp)
+                modifier = Modifier.height(50.dp).fillMaxWidth()
             )
             /*
             FilledButton("Decline", onClick = {

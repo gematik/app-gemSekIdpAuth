@@ -1,3 +1,6 @@
+# Release 2.1.29
+- add button to open a dialog in which the 5 most recent kvnrs are listed. Those are clickable and set the current kvnr in respect to the clicked kvnr
+
 # Release 2.1.27
 - auto authenticate mode (automatically triggers 'accept' button during authentication)
 - replaced toasts by dialogs

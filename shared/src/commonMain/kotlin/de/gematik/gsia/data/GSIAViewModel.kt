@@ -70,6 +70,9 @@ class GSIAViewModel : ViewModel() {
 
     var intent by mutableStateOf<GSIAIntentStep5>(GSIAIntentStep5(""))
 
+    private val _recentKVNRs: MutableStateFlow<List<String>> = MutableStateFlow(getRecentKVNRs())
+    val recentKVNRs: StateFlow<List<String>> = _recentKVNRs
+
     init {
         viewModelScope.launch {
             event.collect { event ->
@@ -88,9 +91,47 @@ class GSIAViewModel : ViewModel() {
         }
     }
 
+    fun getRecentKVNRs(): List<String> {
+        val kvnrs: List<String> = listOf(
+            settings.get("kvnr1", ""),
+            settings.get("kvnr2", ""),
+            settings.get("kvnr3", ""),
+            settings.get("kvnr4", ""),
+            settings.get("kvnr5", "")
+        )
+
+        return if (kvnrs.all { it.isEmpty() })
+            listOf(kvnr)
+        else
+            kvnrs.filter { it.isNotEmpty() }
+    }
+
     fun setKVNR(kvnr: String) {
         settings.set("kvnr", kvnr)
+
+        if (kvnr.length == 10) {
+            if (getRecentKVNRs().contains(kvnr)) {
+                for (i in 2..5) {
+                    if (settings.get("kvnr$i") == kvnr) {
+                        for (j in i downTo 2) {
+                            settings.set("kvnr${j}", settings.get("kvnr${j - 1}", ""))
+                        }
+                        settings.set("kvnr1", kvnr)
+                    }
+                }
+            } else {
+                if (settings.get("kvnr1").isNullOrEmpty())
+                    settings.set("kvnr1", kvnr)
+
+                for (i in 4 downTo 1) {
+                    settings.set("kvnr${i+1}", settings.get("kvnr${i}", ""))
+                }
+                settings.set("kvnr1", settings.get("kvnr", ""))
+            }
+        }
+
         this.kvnr = kvnr
+        this._recentKVNRs.value = getRecentKVNRs()
     }
 
     fun setSelectedClaims(selectedClaims: Map<String, Boolean>) {
