@@ -60,12 +60,12 @@ fun DefaultScreen() {
 
             SetAuthKeyMax()
             Spacer(Modifier.height(20.dp))
-            TextFieldKVNR()
+            BlockKVNR()
             Spacer(Modifier.height(10.dp))
             SetAutoAuthenticate()
         }
 
-        Text("v 2.1.27", Modifier.padding(5.dp))
+        Text("v 2.1.29", Modifier.padding(5.dp))
     }
 }
 
@@ -78,8 +78,8 @@ fun SetAuthKeyMax() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(20.dp),
-        horizontalArrangement = Arrangement.Start,
+            .padding(top = 20.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         OutlinedTextField(
             value = authkey,
