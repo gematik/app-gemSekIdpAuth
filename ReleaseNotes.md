@@ -1,3 +1,6 @@
+# Release 2.1.31
+- update README.md
+
 # Release 2.1.29
 - add button to open a dialog in which the 5 most recent kvnrs are listed. Those are clickable and set the current kvnr in respect to the clicked kvnr
 
